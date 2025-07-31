@@ -1,4 +1,4 @@
-module github.com/skycluster-project/skycluster-apps/ca-gen
+module github.com/skycluster-project/skycluster-apps/ca-gen/ca-gen
 
 go 1.24.4
 

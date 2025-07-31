@@ -7,7 +7,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: ca-gen
-      image: etesami/ca-gen:70ee90e78657d6167691ee3228ae5dd0fdce4dd8
+      image: etesami/ca-gen:56b6b18
       # command: ["sh", "-c", "echo $MY_VAR"]
       env:
         - name: POD_NAMESPACE

@@ -1,4 +1,4 @@
-package cagen
+package main
 
 import (
 	"context"
