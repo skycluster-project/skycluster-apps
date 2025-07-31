@@ -14,12 +14,11 @@ import (
 	"os"
 	"time"
 
-	"k8s.io/client-go/tools/clientcmd"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	// "k8s.io/client-go/rest"
+	"k8s.io/client-go/rest"
+	// "k8s.io/client-go/tools/clientcmd"
 )
 
 func main() {
@@ -32,22 +31,23 @@ func main() {
 		log.Fatal("CA_SECRET_NAME, OUTPUT_SECRET_NAME, NAMESPACE, CERT_COMMON_NAME required")
 	}
 
-	// cfg, err := rest.InClusterConfig()
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// var kubeconfig *string
+	// if home := os.Getenv("HOME"); home != "" {
+	// 	kubeconfig = &[]string{home + "/.kube/config"}[0]
+	// } else {
+	// 	kubeconfig = nil
+	// 	return
+	// }
+	// cfg, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
 
-	var kubeconfig *string
-	if home := os.Getenv("HOME"); home != "" {
-		kubeconfig = &[]string{home + "/.kube/config"}[0]
-	} else {
-		kubeconfig = nil
-		return
-	}
-	cfg, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	if err != nil {
-		log.Fatal(err)
-	}
 	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		log.Fatal(err)
