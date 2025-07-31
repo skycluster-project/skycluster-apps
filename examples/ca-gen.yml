@@ -8,7 +8,7 @@ spec:
   serviceAccountName: skycluster-sva
   containers:
     - name: ca-gen
-      image: etesami/ca-gen:d50a2f6
+      image: etesami/ca-gen:35217a7
       # command: ["sh", "-c", "echo $MY_VAR"]
       env:
         - name: POD_NAMESPACE

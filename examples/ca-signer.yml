@@ -6,7 +6,7 @@ metadata:
 spec:
   containers:
   - name: ca-signer
-    image: your-registry/ca-signer:latest
+    image: etesami/ca-signer:35217a7
     env:
     - name: CA_SECRET_NAME
       value: skycluster-self-ca
@@ -15,8 +15,8 @@ spec:
     - name: NAMESPACE
       value: skycluster-system
     - name: CERT_COMMON_NAME
-      value: "example.org"
+      value: "skycluster.local"
     - name: CERT_SANS
-      value: "DNS:host.docker.internal,IP:10.30.20.18,IP:172.18.0.3"
+      value: "DNS:host.docker.internal,DNS:skycluster.local,IP:172.18.0.3,IP:0.0.0.0"
   restartPolicy: Never
   serviceAccountName: skycluster-sva

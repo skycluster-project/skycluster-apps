@@ -21,7 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [ "ca-gen" ]
+        app: 
+          - "ca-gen"
+          - "ca-signer"
     permissions:
       contents: read
       packages: write

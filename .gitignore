@@ -32,3 +32,4 @@ go.work.sum
 # .vscode/
 
 **/source-me.sh
+examples/*private.yml
