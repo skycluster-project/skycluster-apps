@@ -5,9 +5,10 @@ metadata:
   namespace: skycluster-system
 spec:
   restartPolicy: Never
+  serviceAccountName: skycluster-sva
   containers:
     - name: ca-gen
-      image: etesami/ca-gen:56b6b18
+      image: etesami/ca-gen:d50a2f6
       # command: ["sh", "-c", "echo $MY_VAR"]
       env:
         - name: POD_NAMESPACE

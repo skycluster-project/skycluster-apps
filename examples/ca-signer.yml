@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ca-signer
+  namespace: skycluster-system
+spec:
+  containers:
+  - name: ca-signer
+    image: your-registry/ca-signer:latest
+    env:
+    - name: CA_SECRET_NAME
+      value: skycluster-self-ca
+    - name: OUTPUT_SECRET_NAME
+      value: headscale-cert
+    - name: NAMESPACE
+      value: skycluster-system
+    - name: CERT_COMMON_NAME
+      value: "example.org"
+    - name: CERT_SANS
+      value: "DNS:host.docker.internal,IP:10.30.20.18,IP:172.18.0.3"
+  restartPolicy: Never
+  serviceAccountName: skycluster-sva

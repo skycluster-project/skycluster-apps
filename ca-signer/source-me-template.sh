@@ -1,0 +1,4 @@
+export CA_SECRET_NAME=
+export OUTPUT_SECRET_NAME=
+export NAMESPACE=
+export CERT_COMMON_NAME=
