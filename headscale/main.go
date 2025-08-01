@@ -27,7 +27,7 @@ func main() {
 	}
 
 	// Load config.yaml from current directory
-	inputConfigPath := "config.yaml"
+	inputConfigPath := "/app/config.yaml"
 	configFile, err := os.Open(inputConfigPath)
 	if err != nil {
 		log.Fatalf("failed to open %s: %v", inputConfigPath, err)
@@ -40,7 +40,7 @@ func main() {
 	}
 
 	// Load acl.json from current directory
-	inputACLPath := "acl.json"
+	inputACLPath := "/app/acl.json"
 	aclFile, err := os.Open(inputACLPath)
 	if err != nil {
 		log.Fatalf("failed to open %s: %v", inputACLPath, err)
