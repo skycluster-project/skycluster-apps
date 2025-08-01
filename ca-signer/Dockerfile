@@ -5,7 +5,7 @@ COPY . .
 RUN go build -o ca-signer .
 RUN chmod +x ca-signer
 
-FROM alpine:latest
+FROM alpine:3.22.1
 WORKDIR /app
 COPY --from=builder /app/ca-signer .
 CMD ["./ca-signer"]

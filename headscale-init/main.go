@@ -27,7 +27,7 @@ func main() {
 	}
 
 	// Load config.yaml from current directory
-	inputConfigPath := "/app/config.yaml"
+	inputConfigPath := "/app/config.yml"
 	configFile, err := os.Open(inputConfigPath)
 	if err != nil {
 		log.Fatalf("failed to open %s: %v", inputConfigPath, err)
@@ -65,8 +65,9 @@ func main() {
 
 	certData, ok1 := secret.Data["tls.crt"]
 	keyData, ok2 := secret.Data["tls.key"]
-	if !ok1 || !ok2 {
-		log.Fatalf("secret %s missing tls.crt or tls.key", secretName)
+	caCertData, ok3 := secret.Data["ca.crt"]
+	if !ok1 || !ok2 || !ok3 {
+		log.Fatalf("secret %s missing tls.crt, tls.key or ca.crt", secretName)
 	}
 
 	// Create output directory
@@ -78,6 +79,7 @@ func main() {
 	// Write TLS files
 	certPath := filepath.Join(outputDir, "tls.crt")
 	keyPath := filepath.Join(outputDir, "tls.key")
+	caCertPath := filepath.Join(outputDir, "ca.crt")
 
 	if err := os.WriteFile(certPath, certData, 0644); err != nil {
 		log.Fatalf("failed to write %s: %v", certPath, err)
@@ -85,13 +87,16 @@ func main() {
 	if err := os.WriteFile(keyPath, keyData, 0644); err != nil {
 		log.Fatalf("failed to write %s: %v", keyPath, err)
 	}
+	if err := os.WriteFile(caCertPath, caCertData, 0644); err != nil {
+		log.Fatalf("failed to write %s: %v", caCertPath, err)
+	}
 
 	if err := setConfigFromEnv(config, "./tls.crt", "./tls.key"); err != nil {
 		log.Fatalf("failed to set config from env: %v", err)
 	}
 
 	// Write config.yaml to /config/
-	outputConfigPath := filepath.Join(outputDir, "config.yaml")
+	outputConfigPath := filepath.Join(outputDir, "config.yml")
 	outConfigFile, err := os.Create(outputConfigPath)
 	if err != nil {
 		log.Fatalf("failed to create %s: %v", outputConfigPath, err)

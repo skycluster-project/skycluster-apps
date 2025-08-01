@@ -1,4 +1,4 @@
-FROM nixos/nix AS builder1
+FROM nixos/nix:2.30.2 AS builder1
 WORKDIR /src
 RUN git clone https://github.com/juanfont/headscale.git .
 ENV NIX_CONFIG='experimental-features = nix-command flakes'
@@ -12,6 +12,12 @@ RUN nix develop --command bash -c '\
     go build -trimpath -ldflags="-s -w -extldflags=-static" -o headscale ./cmd/headscale \
 '
 
-FROM scratch
+FROM alpine:3.22.1
 COPY --from=builder1 /src/headscale /headscale
-ENTRYPOINT ["/headscale"]
+RUN apk add --no-cache ca-certificates
+
+# Add CA cert install script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

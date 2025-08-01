@@ -5,7 +5,7 @@ COPY . .
 RUN go build -o ca-gen .
 RUN chmod +x ca-gen
 
-FROM alpine:latest
+FROM alpine:3.22.1
 WORKDIR /app
 COPY --from=builder /app/ca-gen .
 CMD ["./ca-gen"]
