@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -125,11 +126,18 @@ func main() {
 func setConfigFromEnv(config map[string]interface{}, certPath, keyPath string) error {
 	// Example of setting a config value from an environment variable
 
-	if val, exists := os.LookupEnv("HEADSCALE_SERVER_URL"); exists {
+	val, exists := os.LookupEnv("HEADSCALE_SERVER_URL")
+	if exists {
+		if _, err := url.Parse(val); err != nil {
+			return fmt.Errorf("invalid HEADSCALE_SERVER_URL format: %v", err)
+		}
 		config["server_url"] = val
 	} else {
 		return fmt.Errorf("HEADSCALE_SERVER_URL not set")
 	}
+
+	u, _ := url.Parse(val)
+	config["listen_addr"] = fmt.Sprintf("0.0.0.0:%s", u.Port())
 
 	if keyPath == "" || certPath == "" {
 		return fmt.Errorf("TLS paths cannot be empty")

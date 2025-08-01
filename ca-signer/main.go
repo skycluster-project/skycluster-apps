@@ -8,10 +8,12 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"fmt"
 	"log"
 	"math/big"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -53,6 +55,12 @@ func main() {
 		log.Fatal(err)
 	}
 	ctx := context.Background()
+
+	controllerNodeIps, err := getControllerNodeIPs(ctx, client)
+	if err != nil {
+		log.Fatalf("Failed to get controller node IPs: %v", err)
+	}
+	log.Printf("Controller node Internal IPs: %v", controllerNodeIps)
 
 	caSecret, err := client.CoreV1().Secrets(namespace).Get(ctx, caSecretName, metav1.GetOptions{})
 	if err != nil {
@@ -105,8 +113,19 @@ func main() {
 		BasicConstraintsValid: true,
 	}
 
+	// Add controller node IPs as SANs if available
+	if len(controllerNodeIps) > 0 {
+		log.Printf("Adding controller node IPs as SANs: %v", controllerNodeIps)
+		for _, ip := range controllerNodeIps {
+			template.IPAddresses = append(template.IPAddresses, net.ParseIP(ip))
+		}
+	}
+
+	// Add SANs from environment variable
 	if sans != "" {
+		log.Printf("Processing SANs: %s", sans)
 		for _, san := range splitSANs(sans) {
+			log.Printf("Found SAN: %s (%s)", san.value, san.typ)
 			switch san.typ {
 			case "DNS":
 				template.DNSNames = append(template.DNSNames, san.value)
@@ -117,6 +136,12 @@ func main() {
 				}
 			}
 		}
+		if len(template.DNSNames) == 0 && len(template.IPAddresses) == 0 {
+			log.Println("No valid SANs provided, using only common name")
+		}
+		log.Printf("Using SANs: DNS=%v, IP=%v", template.DNSNames, template.IPAddresses)
+	} else {
+		log.Println("No SANs provided, using only common name")
 	}
 
 	certDER, err := x509.CreateCertificate(rand.Reader, template, caCert, privKey.Public(), caKey)
@@ -158,50 +183,45 @@ type sanEntry struct {
 	value string
 }
 
+func getControllerNodeIPs(ctx context.Context, client *kubernetes.Clientset) ([]string, error) {
+	nodeName := os.Getenv("CONTROLLER_NODE_NAME")
+	if nodeName == "" {
+		nodeName = "skycluster-control-plane" // Default node name if not set
+	}
+	node, err := client.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	var controllerIP []string
+	for _, addr := range node.Status.Addresses {
+		if addr.Type == corev1.NodeInternalIP {
+			controllerIP = append(controllerIP, addr.Address)
+		}
+	}
+	if len(controllerIP) == 0 {
+		return nil, fmt.Errorf("no internal IP found for node %s", nodeName)
+	}
+	return controllerIP, nil
+}
+
+// Updated splitSANs: Flexible typ parsing, case-insensitive, trims whitespace.
 func splitSANs(sans string) []sanEntry {
 	var res []sanEntry
-	for _, part := range splitAndTrim(sans, ",") {
-		if len(part) < 4 || part[3] != ':' {
+	for _, part := range strings.Split(sans, ",") {
+		part = strings.TrimSpace(part) // Use standard TrimSpace.
+		if part == "" {
 			continue
 		}
-		res = append(res, sanEntry{typ: part[:3], value: part[4:]})
+		colon := strings.Index(part, ":")
+		if colon < 1 || colon == len(part)-1 { // Require typ (at least 1 char) and value (non-empty after :).
+			continue // Skip invalid (no :, or no value/typ).
+		}
+		typ := strings.ToUpper(strings.TrimSpace(part[:colon])) // Case-insensitive (e.g., "dns" -> "DNS").
+		value := strings.TrimSpace(part[colon+1:])
+		if typ == "" || value == "" {
+			continue
+		}
+		res = append(res, sanEntry{typ: typ, value: value})
 	}
 	return res
-}
-
-func splitAndTrim(s, sep string) []string {
-	raw := []string{}
-	for _, part := range stringSplit(s, sep) {
-		raw = append(raw, trimSpace(part))
-	}
-	return raw
-}
-
-// simple replacements for strings package functions:
-func stringsTrimSpace(s string) string {
-	for len(s) > 0 && (s[0] == ' ' || s[0] == '\t' || s[0] == '\n' || s[0] == '\r') {
-		s = s[1:]
-	}
-	for len(s) > 0 && (s[len(s)-1] == ' ' || s[len(s)-1] == '\t' || s[len(s)-1] == '\n' || s[len(s)-1] == '\r') {
-		s = s[:len(s)-1]
-	}
-	return s
-}
-
-func stringSplit(s, sep string) []string {
-	// minimal splitter by sep string (here always ",")
-	var parts []string
-	start := 0
-	for i := 0; i+len(sep) <= len(s); i++ {
-		if s[i:i+len(sep)] == sep {
-			parts = append(parts, s[start:i])
-			start = i + len(sep)
-		}
-	}
-	parts = append(parts, s[start:])
-	return parts
-}
-
-func trimSpace(s string) string {
-	return stringsTrimSpace(s)
 }
