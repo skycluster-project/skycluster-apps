@@ -22,6 +22,7 @@ jobs:
     strategy:
       matrix:
         app: 
+          - "headscale"
           - "ca-gen"
           - "ca-signer"
     permissions:

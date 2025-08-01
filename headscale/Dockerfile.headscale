@@ -1,0 +1,17 @@
+FROM nixos/nix AS builder1
+WORKDIR /src
+RUN git clone https://github.com/juanfont/headscale.git .
+ENV NIX_CONFIG='experimental-features = nix-command flakes'
+# RUN nix develop --command make generate
+# RUN nix develop --command go build -o "headscale" ./cmd/headscale
+RUN nix develop --command bash -c '\
+    export CGO_ENABLED=0 && \
+    export GOOS=linux && \
+    export GOARCH=amd64 && \
+    make generate && \
+    go build -trimpath -ldflags="-s -w -extldflags=-static" -o headscale ./cmd/headscale \
+'
+
+FROM scratch
+COPY --from=builder1 /src/headscale /headscale
+ENTRYPOINT ["/headscale"]

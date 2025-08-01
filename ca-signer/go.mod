@@ -1,4 +1,4 @@
-module github.com/skycluster-project/skycluster-apps/ca-gen/ca-signer
+module github.com/skycluster-project/skycluster-apps/ca-signer
 
 go 1.24.4
 
