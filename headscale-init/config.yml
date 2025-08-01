@@ -124,7 +124,7 @@ dns:
   search_domains: []
   extra_records: []
 
-unix_socket: /var/run/headscale/headscale.sock
+unix_socket: /var/lib/headscale/run/headscale.sock
 unix_socket_permission: "0770"
 
 logtail:

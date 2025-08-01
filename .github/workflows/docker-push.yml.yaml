@@ -23,6 +23,7 @@ jobs:
       matrix:
         app: 
           - "headscale-init"
+          - "headscale-init-config"
           - "headscale-server"
           # - "ca-gen"
           # - "ca-signer"
