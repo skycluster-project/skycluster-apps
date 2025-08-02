@@ -55,11 +55,18 @@ if [ "$USER_COUNT" -ne 1 ]; then
   exit 1
 fi
 
+API_SERVER=os.getenv("HEADSCALE_SERVER_URL")
+if [ -z "$API_SERVER" ]; then
+  echo "[ERROR] HEADSCALE_SERVER_URL environment variable is not set"
+  exit 1
+fi
+
 # Step 4: Create secret
 echo "[INFO] Creating Kubernetes secret..."
 kubectl create secret generic headscale-connection-secret -n skycluster-system \
   --from-file=user.json="$USER_OUT" \
   --from-file=preauth.json="$PREAUTH_OUT" \
+  --from-literal=api_server="$API_SERVER" \
   --dry-run=client -o yaml | kubectl apply -f -
 
 echo "[SUCCESS] Secret created successfully."
