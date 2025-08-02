@@ -55,7 +55,7 @@ if [ "$USER_COUNT" -ne 1 ]; then
   exit 1
 fi
 
-API_SERVER=os.getenv("HEADSCALE_SERVER_URL")
+API_SERVER="${HEADSCALE_SERVER_URL}"
 if [ -z "$API_SERVER" ]; then
   echo "[ERROR] HEADSCALE_SERVER_URL environment variable is not set"
   exit 1
