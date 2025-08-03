@@ -6,5 +6,8 @@ if [ -f /etc/headscale/ca.crt ]; then
     update-ca-certificates
 fi
 
+# Debug purpose: Uncomment the next line to keep the container running for debugging
+# tail -f /dev/null
+
 # Run headscale
 exec /headscale "$@"

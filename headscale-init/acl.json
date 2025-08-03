@@ -1,15 +1,20 @@
 {
+  "groups": {
+    "group:sky": ["skycluster@"]
+  }, 
+  "tagOwners": {
+    "tag:gateway": [
+      "group:sky"
+    ]
+  },
+  "autoApprovers": {
+    "routes": {
+      "10.0.0.0/8": ["group:sky"]
+    }
+  },
   "acls": [
     { "action": "accept", "src": ["*"], "dst": ["*:*"] }
   ],
-  "groups": {
-    "group:devops": ["skycluster@"]
-  }, 
-  "autoApprovers": {
-    "routes": {
-      "10.0.0.0/8": ["group:devops", "skycluster@"]
-    }
-  },
   "derpMap": {
     "Regions": {
       "1": null,

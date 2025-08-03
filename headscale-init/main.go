@@ -92,7 +92,7 @@ func main() {
 		log.Fatalf("failed to write %s: %v", caCertPath, err)
 	}
 
-	if err := setConfigFromEnv(config, "./tls.crt", "./tls.key"); err != nil {
+	if err := setConfigFromEnv(config, "./tls.crt", "./tls.key", "./acl.json"); err != nil {
 		log.Fatalf("failed to set config from env: %v", err)
 	}
 
@@ -123,7 +123,7 @@ func main() {
 	}
 }
 
-func setConfigFromEnv(config map[string]interface{}, certPath, keyPath string) error {
+func setConfigFromEnv(config map[string]interface{}, certPath, keyPath, aclPath string) error {
 	// Example of setting a config value from an environment variable
 
 	val, exists := os.LookupEnv("HEADSCALE_SERVER_URL")
@@ -144,6 +144,10 @@ func setConfigFromEnv(config map[string]interface{}, certPath, keyPath string) e
 	}
 	config["tls_key_path"] = keyPath
 	config["tls_cert_path"] = certPath
+	config["policy"] = map[string]string{
+		"mode": "file",
+		"path": aclPath,
+	}
 
 	// log level
 	if val, exists := os.LookupEnv("HEADSCALE_LOG_LEVEL"); exists {
