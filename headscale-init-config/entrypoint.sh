@@ -61,13 +61,19 @@ if [ -z "$API_SERVER" ]; then
   exit 1
 fi
 
+SECRET_NAME="${HEADSCALE_SECRET_NAME}"
+if [ -z "$SECRET_NAME" ]; then
+  echo "[ERROR] HEADSCALE_SECRET_NAME environment variable is not set"
+  exit 1
+fi
+
 # Step 4: Create secret
 echo "[INFO] Creating Kubernetes secret..."
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Secret
 metadata:
-  name: headscale-tttt
+  name: "$SECRET_NAME"
   namespace: skycluster-system
   labels:
     skycluster.io/managed-by: skycluster
