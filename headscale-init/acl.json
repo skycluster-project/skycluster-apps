@@ -3,11 +3,11 @@
     { "action": "accept", "src": ["*"], "dst": ["*:*"] }
   ],
   "groups": {
-    "group:devops": ["skycluster"]
+    "group:devops": ["skycluster@"]
   }, 
   "autoApprovers": {
     "routes": {
-      "10.0.0.0/8": ["group:devops", "skycluster"]
+      "10.0.0.0/8": ["group:devops", "skycluster@"]
     }
   },
   "derpMap": {

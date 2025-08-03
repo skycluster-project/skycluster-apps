@@ -22,11 +22,11 @@ jobs:
     strategy:
       matrix:
         app: 
-          # - "headscale-init"
-          - "headscale-init-config"
+          - "headscale-init"
+          # - "headscale-init-config"
           # - "headscale-server"
           # - "ca-signer"
-          - "ca-gen"
+          # - "ca-gen"
     permissions:
       contents: read
       packages: write
