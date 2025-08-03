@@ -63,10 +63,21 @@ fi
 
 # Step 4: Create secret
 echo "[INFO] Creating Kubernetes secret..."
-kubectl create secret generic headscale-connection-secret -n skycluster-system \
-  --from-file=user.json="$USER_OUT" \
-  --from-file=preauth.json="$PREAUTH_OUT" \
-  --from-literal=api_server="$API_SERVER" \
-  --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: headscale-tttt
+  namespace: skycluster-system
+  labels:
+    skycluster.io/managed-by: skycluster
+    skycluster.io/secret-type: headscale-connection
+type: Opaque
+data:
+  user.json: $(echo "$USER_OUT" | base64 -w0)
+  preauth.json: $(echo "$PREAUTH_OUT" | base64 -w0)
+stringData:
+  api_server: "$API_SERVER"
+EOF
 
 echo "[SUCCESS] Secret created successfully."

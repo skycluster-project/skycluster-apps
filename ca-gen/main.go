@@ -83,6 +83,10 @@ func main() {
 		secret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: cmName,
+				Labels: map[string]string{
+					"skycluster.io/managed-by":  "skycluster",
+					"skycluster.io/secret-type": "skycluster-ca",
+				},
 			},
 			Data: map[string][]byte{
 				"ca.crt": cert,
