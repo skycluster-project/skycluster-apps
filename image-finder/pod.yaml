@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: image-finder
+  labels:
+    app: image-finder
+spec:
+  restartPolicy: Never
+  containers:
+    - name: image-finder
+      image: etesami/image-finder:latest
+      imagePullPolicy: Always
+      env:
+        - name: INPUT_JSON
+          value: |
+            {
+              "Region":"us-east-1",
+              "zones":[
+                {"nameLabel":"ubuntu-24.04","zone":"us-east-1a"},
+                {"nameLabel":"ubuntu-22.04","zone":"us-east-1a"},
+                {"nameLabel":"ubuntu-20.04","zone":"us-east-1a"}
+              ]
+            }
+        - name: PROVIDER
+          value: aws
+        - name: AWS_ACCESS_KEY_ID
+          value: ""
+        - name: AWS_SECRET_ACCESS_KEY
+          value: ""
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: aws-credentials
+        #       key: access_key_id
+        # - name: AWS_SECRET_ACCESS_KEY
+        #   valueFrom:
+        #     secretKe
+      terminationMessagePolicy: File
+      terminationMessagePath: /dev/termination-log
