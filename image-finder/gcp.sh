@@ -24,7 +24,7 @@ GOOGLE_CLOUD_PROJECT="${GOOGLE_CLOUD_PROJECT:-}"
 TOP_REGION=$(jq -r '.Region' <<<"$INPUT_JSON")
 mapfile -t ZONES < <(jq -c '.zones[]' <<<"$INPUT_JSON")
 
-echo "Using AWS region: $TOP_REGION"
+echo "Using region: $TOP_REGION"
 echo "Zones to search: ${#ZONES[@]}"
 
 ARCH="amd64"

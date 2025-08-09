@@ -19,7 +19,7 @@ command -v python3 >/dev/null 2>&1 || { err "python3 not found (needed for filte
 LOCATION=$(jq -r '.Region' <<<"$INPUT_JSON")
 mapfile -t ZONES < <(jq -c '.zones[]' <<<"$INPUT_JSON")
 
-echo "Using AWS region: $LOCATION"
+echo "Using region: $LOCATION"
 echo "Zones to search: ${#ZONES[@]}"
 
 AZURE_CLIENT_ID=$(jq -r '.clientId // empty' <<<"$AZ_CONFIG_JSON")
@@ -64,7 +64,7 @@ for z in "${ZONES[@]}"; do
   # Fields present: publisher, offer, sku, version, urn
   # We'll match regex across urn/offer/sku.
   # ARCH best-effort: prefer entries whose sku/urn hints arm64/x64.
-  URI="$(python3 - "$PATTERN" "x86" "$JSON" <<'PY' 
+  IMG_DATA="$(python3 - "$PATTERN" "x86" "$JSON" <<'PY' 
 import json, os, re, sys
 pattern = sys.argv[1]
 arch = (sys.argv[2] or "").lower()
@@ -107,12 +107,25 @@ if not candidates:
 # Pick newest by version (descending)
 candidates.sort(key=lambda i: version_key(i.get("version","0")), reverse=True)
 best = candidates[0]
-print(best.get("urn",""))
+urn = best.get("urn", "")
+sku = best.get("sku", "").lower()
+if "gen2" in sku:
+    generation = "V2"
+else:
+    generation = "V1"
+print(json.dumps({"urn": urn, "generation": generation}))
 PY
 )"
   
-  out_zone=$(jq -n --arg nl "$nameLabel" --arg zn "$zone" --arg URI "$URI" \
-    '{nameLabel:$nl, zone:$zn, name: ($URI//null)}')
+  URI=$(jq -r '.urn // empty' <<<"$IMG_DATA")
+  if [[ -z "$URI" ]]; then
+    err "No images matched for pattern '$PATTERN' in zone '$zone'."
+    continue
+  fi
+  generation=$(jq -r '.generation // empty' <<<"$IMG_DATA")
+
+  out_zone=$(jq -n --arg nl "$nameLabel" --arg zn "$zone" --arg URI "$URI" --arg gen "$generation" \
+    '{nameLabel:$nl, zone:$zn, name: ($URI//null), generation: ($gen//null)}')
   OUT+=("$out_zone")
 done
 
