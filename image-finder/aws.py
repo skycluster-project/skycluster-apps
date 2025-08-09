@@ -74,11 +74,11 @@ def main():
         eprint(f"INPUT_JSON is not valid JSON: {exc}")
         sys.exit(2)
 
-    top_region = payload.get("Region")
+    top_region = payload.get("region")
     zones: List[Dict[str, Any]] = payload.get("zones", [])
 
     if not top_region or not isinstance(zones, list):
-        eprint("INPUT_JSON must include 'Region' and 'zones' array.")
+        eprint("INPUT_JSON must include 'region' and 'zones' array.")
         sys.exit(2)
 
     print(f"Using AWS region: {top_region}")

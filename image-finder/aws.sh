@@ -11,7 +11,7 @@ command -v jq >/dev/null 2>&1 || { echo "jq not found" >&2; exit 2; }
 OWNER=amazon
 ARCH='x86_64'
 
-TOP_REGION=$(jq -r '.Region' <<<"$INPUT_JSON")
+TOP_REGION=$(jq -r '.region' <<<"$INPUT_JSON")
 mapfile -t ZONES < <(jq -c '.zones[]' <<<"$INPUT_JSON")
 
 echo "Using AWS region: $TOP_REGION"

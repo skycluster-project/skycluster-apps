@@ -155,10 +155,10 @@ def main() -> None:
         err(f"INPUT_JSON is not valid JSON: {e}")
         sys.exit(2)
 
-    location = payload.get("Region")
+    location = payload.get("region")
     zones = payload.get("zones", [])
     if not location or not isinstance(zones, list):
-        err("INPUT_JSON must include 'Region' and an array 'zones'")
+        err("INPUT_JSON must include 'region' and an array 'zones'")
         sys.exit(2)
 
     az_cfg = os.environ.get("AZ_CONFIG_JSON", "{}")

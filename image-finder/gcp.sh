@@ -21,7 +21,7 @@ command -v jq >/dev/null 2>&1 || { err "jq not found"; exit 7; }
 
 # Required:
 GOOGLE_CLOUD_PROJECT="${GOOGLE_CLOUD_PROJECT:-}" 
-TOP_REGION=$(jq -r '.Region' <<<"$INPUT_JSON")
+TOP_REGION=$(jq -r '.region' <<<"$INPUT_JSON")
 mapfile -t ZONES < <(jq -c '.zones[]' <<<"$INPUT_JSON")
 
 echo "Using region: $TOP_REGION"

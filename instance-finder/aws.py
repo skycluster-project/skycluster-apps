@@ -185,7 +185,7 @@ def main():
         raise SystemExit("No zones provided in INPUT_JSON")
 
     # Optionally set environment variables
-    region = data["Region"]
+    region = data["region"]
     if not region:
         raise SystemExit("No region provided in INPUT_JSON")
         

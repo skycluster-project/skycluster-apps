@@ -34,7 +34,7 @@ except KeyError:
     err("INPUT_JSON environment variable is required")
     sys.exit(EXIT_USAGE)
 
-TOP_REGION = input_json.get("Region")
+TOP_REGION = input_json.get("region")
 ZONES = input_json.get("zones", [])
 ARCH = "X86_64"
 

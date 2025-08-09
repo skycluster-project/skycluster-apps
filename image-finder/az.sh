@@ -16,7 +16,7 @@ info() { echo "INFO: $*" >&2; }
 command -v az >/dev/null 2>&1 || { err "az (Azure CLI) not found"; exit 6; }
 command -v python3 >/dev/null 2>&1 || { err "python3 not found (needed for filtering)"; exit 6; }
 
-LOCATION=$(jq -r '.Region' <<<"$INPUT_JSON")
+LOCATION=$(jq -r '.region' <<<"$INPUT_JSON")
 mapfile -t ZONES < <(jq -c '.zones[]' <<<"$INPUT_JSON")
 
 echo "Using region: $LOCATION"
