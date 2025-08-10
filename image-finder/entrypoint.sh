@@ -3,6 +3,7 @@ set -euo pipefail
 
 : "${PROVIDER:=}"
 : "${INPUT_JSON:?INPUT_JSON must be set for provider aws}"
+: "${REGION:?REGION must be set for provider aws}"
 
 echo "Starting image-finder for provider='${PROVIDER}'"
 echo "Input JSON:"

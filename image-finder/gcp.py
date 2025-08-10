@@ -34,12 +34,12 @@ except KeyError:
     err("INPUT_JSON environment variable is required")
     sys.exit(EXIT_USAGE)
 
-TOP_REGION = input_json.get("region")
+TOP_REGION = os.getenv("REGION")
 ZONES = input_json.get("zones", [])
 ARCH = "X86_64"
 
 if not TOP_REGION:
-    err("Region missing in INPUT_JSON")
+    err("Region missing from environment")
     sys.exit(EXIT_USAGE)
 
 info(f"Using region: {TOP_REGION}")

@@ -73,9 +73,9 @@ def parse_input() -> Tuple[str, List[str]]:
         raise SystemExit("INPUT_JSON env var is missing or empty")
     data = json.loads(data_str)
 
-    region = data.get("region")
+    region = os.environ.get("REGION")
     if not region:
-        raise SystemExit("No region provided in INPUT_JSON")
+        raise SystemExit("No region provided in env var REGION")
 
     zones = [z["name"] for z in data.get("zones", []) if z.get("name")]
     if not zones:

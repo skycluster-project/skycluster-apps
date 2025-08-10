@@ -74,7 +74,7 @@ def main():
         eprint(f"INPUT_JSON is not valid JSON: {exc}")
         sys.exit(2)
 
-    top_region = payload.get("region")
+    top_region = require_env("REGION")
     zones: List[Dict[str, Any]] = payload.get("zones", [])
 
     if not top_region or not isinstance(zones, list):

@@ -185,9 +185,9 @@ def main():
         raise SystemExit("No zones provided in INPUT_JSON")
 
     # Optionally set environment variables
-    region = data["region"]
+    region = os.environ.get("REGION")
     if not region:
-        raise SystemExit("No region provided in INPUT_JSON")
+        raise SystemExit("No region provided in env var REGION")
         
     family = os.environ.get("FAMILY")
     families = family.split(",") if family else None

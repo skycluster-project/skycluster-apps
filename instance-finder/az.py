@@ -82,9 +82,9 @@ def read_input() -> Tuple[str, List[str]]:
     except Exception as e:
         die(f"Failed to parse INPUT_JSON: {e}")
 
-    region = data.get("region")
+    region = os.environ.get("REGION")
     if not region:
-        die("No region provided in INPUT_JSON")
+        die("No region provided in env var REGION")
 
     zones_raw = [z.get("name") for z in data.get("zones", []) if z.get("name")]
     if not zones_raw:
