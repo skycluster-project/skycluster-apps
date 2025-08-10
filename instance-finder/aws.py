@@ -175,6 +175,7 @@ def recent_spot_price_usd_per_hour(ec2, az: str, instance_type: str, lookback_ho
 
 def main():
     data_str = os.environ.get("INPUT_JSON")
+    output_path = os.environ.get("OUTPUT_PATH")
     data = json.loads(data_str)
     if not data:
         raise SystemExit("INPUT_JSON env var is missing or empty")
@@ -251,7 +252,7 @@ def main():
     OUTPUT = json.dumps(output)
     print(OUTPUT, flush=True)
     #  print into /dev/termination-log
-    with open("/dev/termination-log", "w") as f:
+    with open(output_path, "w") as f:
         f.write(OUTPUT + "\n")
 
 if __name__ == "__main__":

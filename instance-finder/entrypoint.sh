@@ -2,8 +2,9 @@
 set -euo pipefail
 
 : "${PROVIDER:=}"
-: "${INPUT_JSON:?INPUT_JSON must be set for provider aws}"
-: "${REGION:?REGION must be set for provider aws}"
+: "${INPUT_JSON:?INPUT_JSON must be set}"
+: "${REGION:?REGION must be set}"
+: "${OUTPUT_PATH:?OUTPUT_PATH must be set}"
 
 echo "Starting instance-finder for provider='${PROVIDER}'"
 echo "Input JSON:"

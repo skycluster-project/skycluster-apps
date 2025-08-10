@@ -305,6 +305,7 @@ def estimate_machine_price(
 
 def main():
     region, zones = parse_input()
+    output_path = os.environ.get("OUTPUT_PATH")
     families = get_families()
     spot_hours = int(os.environ.get("SPOT_LOOKBACK_HOURS", "24"))  # parity only; unused
 
@@ -370,7 +371,7 @@ def main():
     OUTPUT = json.dumps(output)
     print(OUTPUT, flush=True)
     #  print into /dev/termination-log
-    with open("/dev/termination-log", "w") as f:
+    with open(output_path, "w") as f:
         f.write(OUTPUT + "\n")
 
 if __name__ == "__main__":
