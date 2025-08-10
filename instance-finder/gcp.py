@@ -335,6 +335,7 @@ def main():
         candidates = [mt for mt in machine_types if filter_by_family(mt.name, families)]
         print(f"  {len(candidates)} match family '{families}'", flush=True)
 
+        flavors = []
         for mt in sorted(candidates, key=lambda m: m.name):
             vcpus = mt.guest_cpus or 0
             ram_gib_str = mb_to_gib_str(mt.memory_mb)  # memory_mb is in MB
@@ -344,10 +345,9 @@ def main():
                 billing_service, compute_service_name, region, mt.name, vcpus, mt.memory_mb or 0
             )
 
-            zones_out.append({
+            flavors.append({
                 "name": mt.name,
                 "nameLabel": to_title_label(mt.name),
-                "zoneName": zone,
                 "vcpus": vcpus,
                 "ram": ram_gib_str,
                 "price": dec_to_str_money(ond_price),
@@ -363,6 +363,11 @@ def main():
                     "enabled": spot_price is not None
                 }
             })
+        
+        zones_out.append({
+            "zone": zone,
+            "flavors": flavors
+        })
 
     output = {
         "region": region,

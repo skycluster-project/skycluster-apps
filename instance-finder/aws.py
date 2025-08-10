@@ -217,6 +217,7 @@ def main():
         described = describe_types(ec2_pricing, sorted(candidates))
         print(f"  Retrieved descriptions for {len(described)} instance types", flush=True)
 
+        flavors = []
         for it_name, it_desc in sorted(described.items(), key=lambda kv: kv[0]):
             vcpus = it_desc.get("VCpuInfo", {}).get("DefaultVCpus", 0)
             ram_gib_str = mib_to_gib_str(it_desc.get("MemoryInfo", {}).get("SizeInMiB"))
@@ -225,10 +226,9 @@ def main():
             ond = on_demand_price_usd_per_hour(pricing, region, it_name)
             spot = recent_spot_price_usd_per_hour(ec2, zone, it_name, lookback_hours=spot_hours)
 
-            zones_out.append({
+            flavors.append({
                 "name": it_name,
                 "nameLabel": to_title_label(it_name),
-                "zoneName": zone,
                 "vcpus": vcpus,
                 "ram": ram_gib_str,
                 "price": dec_to_str_money(ond),
@@ -244,6 +244,10 @@ def main():
                     "enabled": spot is not None
                 }
             })
+        zones_out.append({
+            "zone": zone,
+            "flavors": flavors
+        })
 
     output = {
         "region": region,

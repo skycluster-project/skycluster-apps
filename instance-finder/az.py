@@ -303,7 +303,8 @@ def main():
     skus = [s for s in skus if size_matches_family(s.name or "", families)]
     print(f"  {len(skus)} match family '{families}'", flush=True)
 
-    zones_out: List[dict] = []
+    # zones_out: List[dict] = []
+    zone_flavors: Dict[str, List[dict]] = {}
 
     for sku in sorted(skus, key=lambda s: s.name or ""):
         size_name = sku.name or ""
@@ -343,12 +344,13 @@ def main():
 
         # Emit an entry for each requested zone that is supported by this size
         for z_req in zones:
+            if z_req not in zone_flavors:
+                zone_flavors[z_req] = []
             if z_req not in supported_zones:
                 continue
-            zones_out.append({
+            zone_flavors[z_req].append({
                 "name": size_name,
                 "nameLabel": to_title_label(size_name),
-                "zoneName": f"{region}-{z_req}",
                 "vcpus": vcpus,
                 "ram": gib_to_str(mem_gib),
                 "price": dec_to_str_money(ond),
@@ -368,7 +370,7 @@ def main():
 
     output = {
         "region": region,
-        "zones": zones_out
+        "zones": [{"zone": z, "flavors": zv} for z, zv in zone_flavors.items()]
     }
     # print(json.dumps(output, indent=2))
     OUTPUT = json.dumps(output)
