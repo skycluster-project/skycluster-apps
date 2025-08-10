@@ -124,7 +124,7 @@ def main():
             }
         )
 
-    output = {"Region": top_region, "zones": out_zones}
+    output = {"region": top_region, "zones": out_zones}
     out_text = json.dumps(output, separators=(",", ":"))
 
     print(json.dumps(output, separators=(",", ":"), indent=2))

@@ -106,7 +106,7 @@ for z in "${ZONES[@]}"; do
 
 done
 
-OUTPUT=$(printf '%s\n' "${OUT[@]}" | jq -s --arg region "$TOP_REGION" '{Region:$region, zones: .}')
+OUTPUT=$(printf '%s\n' "${OUT[@]}" | jq -s --arg region "$TOP_REGION" '{region:$region, zones: .}')
 
 printf '%s\n' "$OUTPUT" 
 printf '%s\n' "$OUTPUT" > /dev/termination-log

@@ -219,7 +219,7 @@ def main() -> None:
             "generation": generation,
         })
 
-    output = {"Region": location, "zones": out_zones}
+    output = {"region": location, "zones": out_zones}
     out_text = json.dumps(output, separators=(",", ":"))
     print(json.dumps(output, separators=(",", ":"), indent=2))
 

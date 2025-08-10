@@ -129,7 +129,7 @@ PY
   OUT+=("$out_zone")
 done
 
-OUTPUT=$(printf '%s\n' "${OUT[@]}" | jq -s --arg region "$LOCATION" '{Region:$region, zones: .}')
+OUTPUT=$(printf '%s\n' "${OUT[@]}" | jq -s --arg region "$LOCATION" '{region:$region, zones: .}')
 
 printf '%s\n' "$OUTPUT" 
 printf '%s\n' "$OUTPUT" > /dev/termination-log

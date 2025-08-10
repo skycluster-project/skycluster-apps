@@ -121,7 +121,7 @@ for z in ZONES:
     OUT.append(out_zone)
 
 OUTPUT = {
-    "Region": TOP_REGION,
+    "region": TOP_REGION,
     "zones": OUT
 }
 
