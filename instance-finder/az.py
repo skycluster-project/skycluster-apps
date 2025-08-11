@@ -175,7 +175,7 @@ def _retail_iter(params: Dict[str, str]) -> Iterable[dict]:
     url = RETAIL_API
     while url:
         # print(f"Params: {params}", flush=True)
-        resp = requests.get(url, params=params if url == RETAIL_API else None, timeout=30)
+        resp = requests.get(url, params=params if url == RETAIL_API else None, timeout=10,verify=False)
         # print(f"  Status: {resp.status_code}", flush=True)
         resp.raise_for_status()
         data = resp.json()
