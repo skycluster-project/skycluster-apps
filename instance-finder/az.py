@@ -350,7 +350,7 @@ def main():
                 continue
             zone_flavors[z_req].append({
                 "name": size_name,
-                "nameLabel": to_title_label(size_name),
+                "nameLabel": f"{vcpus}vCPUs-{ram_gib_str}GB",
                 "vcpus": vcpus,
                 "ram": gib_to_str(mem_gib),
                 "price": dec_to_str_money(ond),

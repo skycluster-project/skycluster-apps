@@ -347,7 +347,7 @@ def main():
 
             flavors.append({
                 "name": mt.name,
-                "nameLabel": to_title_label(mt.name),
+                "nameLabel": f"{vcpus}vCPUs-{ram_gib_str}GB",
                 "vcpus": vcpus,
                 "ram": ram_gib_str,
                 "price": dec_to_str_money(ond_price),
