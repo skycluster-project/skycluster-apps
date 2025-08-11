@@ -325,10 +325,10 @@ def main():
             vcpus = int(float(vcpus_str)) if vcpus_str else 0
         except Exception:
             vcpus = 0
-        mem_gib = Decimal(mem_gb_str) if mem_gb_str is not None else None
+        # mem_gib = Decimal(mem_gb_str) if mem_gb_str is not None else None
 
         gpu_info = parse_gpu_info_from_sku(sku)
-        print(f"  Size '{size_name}' has {vcpus} vCPUs, {gib_to_str(mem_gib)} RAM, GPU: {gpu_info}", flush=True)
+        print(f"  Size '{size_name}' has {vcpus} vCPUs, {mem_gb_str} RAM, GPU: {gpu_info}", flush=True)
 
         # # Prices (once per size; reused across zones)
         try:
@@ -350,9 +350,9 @@ def main():
                 continue
             zone_flavors[z_req].append({
                 "name": size_name,
-                "nameLabel": f"{vcpus}vCPUs-{ram_gib_str}GB",
+                "nameLabel": f"{vcpus}vCPU-{mem_gb_str}GB",
                 "vcpus": vcpus,
-                "ram": gib_to_str(mem_gib),
+                "ram": f"{mem_gb_str}GB",
                 "price": dec_to_str_money(ond),
                 "generation": generation,
                 "gpu": {

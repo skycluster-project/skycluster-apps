@@ -43,6 +43,15 @@ def mib_to_gib_str(mib):
         return f"{int(q)}Gi"
     return f"{q}Gi"
 
+def mib_to_gb_str(mib):
+    if mib is None:
+        return ""
+    gb = Decimal(mib) / Decimal(1000)  # convert MiB to GB using decimal base
+    q = gb.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if q == q.to_integral():
+        return f"{int(q)}GB"
+    return f"{q}GB"
+
 def to_title_label(instance_type: str) -> str:
     parts = instance_type.split(".")
     if len(parts) == 2:
@@ -106,7 +115,7 @@ def extract_gpu_info(it_desc):
         manufacturer = first.get("Manufacturer") or ""
         mem_mib = first.get("MemoryInfo", {}).get("SizeInMiB")
         if mem_mib:
-            memory_str = mib_to_gib_str(mem_mib)
+            memory_str = mib_to_gb_str(mem_mib)
     return {
         "enabled": True,
         "manufacturer": manufacturer,
@@ -220,7 +229,7 @@ def main():
         flavors = []
         for it_name, it_desc in sorted(described.items(), key=lambda kv: kv[0]):
             vcpus = it_desc.get("VCpuInfo", {}).get("DefaultVCpus", 0)
-            ram_gib_str = mib_to_gib_str(it_desc.get("MemoryInfo", {}).get("SizeInMiB"))
+            ram_gib_str = mib_to_gb_str(it_desc.get("MemoryInfo", {}).get("SizeInMiB"))
             gpu_info = extract_gpu_info(it_desc)
 
             ond = on_demand_price_usd_per_hour(pricing, region, it_name)
@@ -228,7 +237,7 @@ def main():
 
             flavors.append({
                 "name": it_name,
-                "nameLabel": f"{vcpus}vCPUs-{ram_gib_str}GB",
+                "nameLabel": f"{vcpus}vCPU-{ram_gib_str}",
                 "vcpus": vcpus,
                 "ram": ram_gib_str,
                 "price": dec_to_str_money(ond),

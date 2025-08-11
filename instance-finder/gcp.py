@@ -56,13 +56,25 @@ def mib_to_gib_str(mib: Optional[int]) -> Optional[str]:
     if mib is None:
         return None
     gib = Decimal(mib) / Decimal(1024)
-    return f"{gib.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)} GiB"
+    return f"{gib.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)}GiB"
 
 def mb_to_gib_str(mb: Optional[int]) -> Optional[str]:
     if mb is None:
         return None
     gib = Decimal(mb) / Decimal(1024)
-    return f"{gib.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)} GiB"
+    return f"{gib.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)}GiB"
+
+def mib_to_gb_str(mib: Optional[int]) -> Optional[str]:
+    if mib is None:
+        return None
+    gb = Decimal(mib) / Decimal(1000)  # MiB to GB (decimal)
+    return f"{gb.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)}GB"
+
+def mb_to_gb_str(mb: Optional[int]) -> Optional[str]:
+    if mb is None:
+        return None
+    gb = Decimal(mb) / Decimal(1000)  # MB to GB (decimal)
+    return f"{gb.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)}GB"
 
 def to_title_label(machine_type_name: str) -> str:
     return machine_type_name.replace("-", " ").title()
@@ -338,7 +350,7 @@ def main():
         flavors = []
         for mt in sorted(candidates, key=lambda m: m.name):
             vcpus = mt.guest_cpus or 0
-            ram_gib_str = mb_to_gib_str(mt.memory_mb)  # memory_mb is in MB
+            ram_gb_str = mb_to_gb_str(mt.memory_mb)  # memory_mb is in MB
             gpu_info = extract_gpu_info(mt.name)
 
             ond_price, spot_price = estimate_machine_price(
@@ -347,9 +359,9 @@ def main():
 
             flavors.append({
                 "name": mt.name,
-                "nameLabel": f"{vcpus}vCPUs-{ram_gib_str}GB",
+                "nameLabel": f"{vcpus}vCPU-{ram_gb_str}GB",
                 "vcpus": vcpus,
-                "ram": ram_gib_str,
+                "ram": ram_gb_str,
                 "price": dec_to_str_money(ond_price),
                 "gpu": {
                     "enabled": gpu_info["enabled"],

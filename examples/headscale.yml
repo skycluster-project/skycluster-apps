@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: headscale-server
+  namespace: skycluster-system
+spec:
+  volumes:
+    - name: config-volume
+      emptyDir: {}
+  initContainers:
+    - name: config-generator
+      image: etesami/headscale:latest
+      imagePullPolicy: Always
+      env:
+        - name: SECRET_NAMESPACE
+          value: skycluster-system
+        - name: SECRET_NAME
+          value: headscale-cert
+        - name: HEADSCALE_SERVER_URL
+          value: https://142.1.174.178:8080
+      volumeMounts:
+        - name: config-volume
+          mountPath: /config
+      workingDir: /app
+      
+      # Build and run the Go app inside this init container using inline code (or replace with prebuilt image)
+      # You could also build this Go binary separately and use a minimal container image
+  containers:
+    # an inline go application that list the contents of the config directory
+    # and print the config file content and acl.json content
+    - name: config-viewer
+      image: alpine:latest
+      command: ["/bin/sh", "-c"]
+      args: ["ls /etc/headscale && cat /etc/headscale/config.yml"]
+      volumeMounts:
+        - name: config-volume
+          mountPath: /etc/headscale
+      workingDir: /app
+    - name: headscale-server
+      image: etesami/headscale-server:latest
+      volumeMounts:
+        - name: config-volume
+          mountPath: /etc/headscale
+      command: ["/bin"]
+      args: ["serve", "--config", "/etc/headscale/config.yml"]
+  restartPolicy: Never
+  serviceAccountName: skycluster-sva
