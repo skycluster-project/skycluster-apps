@@ -34,23 +34,19 @@ def dec_to_str_money(x):
     except Exception:
         return ""
 
-def mib_to_gib_str(mib):
-    if mib is None:
-        return ""
-    gib = Decimal(mib) / Decimal(1024)
-    q = gib.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    if q == q.to_integral():
-        return f"{int(q)}Gi"
-    return f"{q}Gi"
+# def mib_to_gib_str(mib):
+#     if mib is None:
+#         return ""
+#     gib = Decimal(mib) / Decimal(1024)
+#     q = gib.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+#     if q == q.to_integral():
+#         return f"{int(q)}Gi"
+#     return f"{q}Gi"
 
 def mib_to_gb_str(mib):
     if mib is None:
         return ""
-    gb = Decimal(mib) / Decimal(1000)  # convert MiB to GB using decimal base
-    q = gb.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    if q == q.to_integral():
-        return f"{int(q)}GB"
-    return f"{q}GB"
+    return f"{int(round(mib / 1024))}GB"
 
 def to_title_label(instance_type: str) -> str:
     parts = instance_type.split(".")

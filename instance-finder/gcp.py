@@ -35,7 +35,7 @@ Note:
 import json
 import os
 import re
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_DOWN
 from typing import Dict, List, Optional, Tuple
 
 # ---- GCP SDKs ----
@@ -52,29 +52,30 @@ def dec_to_str_money(d: Optional[Decimal]) -> Optional[str]:
         return None
     return f"${d.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)}"
 
-def mib_to_gib_str(mib: Optional[int]) -> Optional[str]:
-    if mib is None:
-        return None
-    gib = Decimal(mib) / Decimal(1024)
-    return f"{gib.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)}GiB"
+# def mib_to_gib_str(mib: Optional[int]) -> Optional[str]:
+#     if mib is None:
+#         return None
+#     gib = Decimal(mib) / Decimal(1024)
+#     return f"{gib.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)}GiB"
 
-def mb_to_gib_str(mb: Optional[int]) -> Optional[str]:
-    if mb is None:
-        return None
-    gib = Decimal(mb) / Decimal(1024)
-    return f"{gib.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)}GiB"
+# def mb_to_gib_str(mb: Optional[int]) -> Optional[str]:
+#     if mb is None:
+#         return None
+#     gib = Decimal(mb) / Decimal(1024)
+#     return f"{gib.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)}GiB"
 
-def mib_to_gb_str(mib: Optional[int]) -> Optional[str]:
-    if mib is None:
-        return None
-    gb = Decimal(mib) / Decimal(1000)  # MiB to GB (decimal)
-    return f"{gb.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)}GB"
+# def mib_to_gb_str(mib: Optional[int]) -> Optional[str]:
+#     if mib is None:
+#         return None
+#     gb = Decimal(mib) / Decimal(1000)  # MiB to GB (decimal)
+#     return f"{gb.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)}GB"
 
 def mb_to_gb_str(mb: Optional[int]) -> Optional[str]:
     if mb is None:
         return None
     gb = Decimal(mb) / Decimal(1000)  # MB to GB (decimal)
-    return f"{gb.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)}GB"
+    gb_rounded = gb.quantize(Decimal('1'), rounding=ROUND_HALF_DOWN)  # nearest whole GB
+    return f"{gb_rounded}GB"
 
 def to_title_label(machine_type_name: str) -> str:
     return machine_type_name.replace("-", " ").title()
@@ -359,7 +360,7 @@ def main():
 
             flavors.append({
                 "name": mt.name,
-                "nameLabel": f"{vcpus}vCPU-{ram_gb_str}GB",
+                "nameLabel": f"{vcpus}vCPU-{ram_gb_str}",
                 "vcpus": vcpus,
                 "ram": ram_gb_str,
                 "price": dec_to_str_money(ond_price),

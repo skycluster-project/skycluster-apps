@@ -319,7 +319,8 @@ def main():
 
         # Capabilities
         vcpus_str = get_capability(sku.capabilities, "vCPUs") or get_capability(sku.capabilities, "vCPUS")
-        mem_gb_str = get_capability(sku.capabilities, "MemoryGB") or get_capability(sku.capabilities, "MemoryGb")
+        mem_gb = get_capability(sku.capabilities, "MemoryGB") or get_capability(sku.capabilities, "MemoryGb")
+        mem_gb_str = f"{int(round(float(mem_gb)))}GB" if mem_gb is not None else None
         generation = get_capability(sku.capabilities, "HyperVGenerations") 
         try:
             vcpus = int(float(vcpus_str)) if vcpus_str else 0
@@ -350,9 +351,9 @@ def main():
                 continue
             zone_flavors[z_req].append({
                 "name": size_name,
-                "nameLabel": f"{vcpus}vCPU-{mem_gb_str}GB",
+                "nameLabel": f"{vcpus}vCPU-{mem_gb_str}",
                 "vcpus": vcpus,
-                "ram": f"{mem_gb_str}GB",
+                "ram": f"{mem_gb_str}",
                 "price": dec_to_str_money(ond),
                 "generation": generation,
                 "gpu": {
