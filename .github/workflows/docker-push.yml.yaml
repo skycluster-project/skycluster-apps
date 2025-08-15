@@ -2,7 +2,7 @@ name: Docker
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
     # Publish semver tags as releases.
     tags: [ 'v*.*.*' ]
   pull_request:
@@ -28,7 +28,7 @@ jobs:
           # - "ca-signer"
           # - "ca-gen"
           - "image-finder"
-          - "instance-finder"
+          # - "instance-finder"
     permissions:
       contents: read
       packages: write

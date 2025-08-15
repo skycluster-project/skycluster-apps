@@ -126,7 +126,7 @@ OUTPUT = {
     "images": OUT
 }
 
-OUTPUT = json.dumps(output)
+OUTPUT = json.dumps(OUTPUT)
 print(OUTPUT, flush=True)
 #  print into /dev/termination-log
 with open(output_path, "w") as f:
