@@ -35,6 +35,7 @@ except KeyError:
     sys.exit(EXIT_USAGE)
 
 TOP_REGION = os.getenv("REGION")
+output_path = os.environ.get("OUTPUT_PATH")
 ZONES = input_json.get("zones", [])
 ARCH = "X86_64"
 
@@ -125,8 +126,10 @@ OUTPUT = {
     "zones": OUT
 }
 
-print(json.dumps(OUTPUT, indent=2), flush=True)
-with open("/dev/termination-log", "w") as f:
-    json.dump(OUTPUT, f)
+OUTPUT = json.dumps(output)
+print(OUTPUT, flush=True)
+#  print into /dev/termination-log
+with open(output_path, "w") as f:
+    f.write(OUTPUT + "\n")
 
 sys.exit(EXIT_SUCCESS)

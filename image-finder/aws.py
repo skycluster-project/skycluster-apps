@@ -64,6 +64,7 @@ def find_latest_ami(region: str, pattern: str) -> Optional[str]:
 def main():
     # Required env
     input_json = require_env("INPUT_JSON")
+    output_path = os.environ.get("OUTPUT_PATH")
     require_env("AWS_ACCESS_KEY_ID")
     require_env("AWS_SECRET_ACCESS_KEY")
     # AWS_SESSION_TOKEN is optional
@@ -125,15 +126,11 @@ def main():
         )
 
     output = {"region": top_region, "zones": out_zones}
-    out_text = json.dumps(output, separators=(",", ":"))
-
-    print(json.dumps(output, separators=(",", ":"), indent=2))
-    try:
-        with open(TERMINATION_LOG, "w") as f:
-            f.write(out_text + "\n")
-    except Exception:
-        # Non-fatal if not running in an environment with a termination log.
-        pass
+    OUTPUT = json.dumps(output)
+    print(OUTPUT, flush=True)
+    #  print into /dev/termination-log
+    with open(output_path, "w") as f:
+        f.write(OUTPUT + "\n")
 
     sys.exit(0)
 
