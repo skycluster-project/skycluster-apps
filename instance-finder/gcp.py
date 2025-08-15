@@ -317,9 +317,13 @@ def estimate_machine_price(
 # --------------- Main ---------------
 
 def main():
-    region, zones = parse_input()
+    
+    region = os.environ.get("REGION")
     output_path = os.environ.get("OUTPUT_PATH")
-    families = get_families()
+    data = json.loads(os.environ.get("INPUT_JSON", "{}"))
+    zones = [z["zone"] for z in data["offerings"]]
+    families = [f.get("nameLabel") for z in data.get("offerings", []) for f in z.get("zoneOfferings", [])]
+    
     spot_hours = int(os.environ.get("SPOT_LOOKBACK_HOURS", "24"))  # parity only; unused
 
     print(f"Finding offered machine types in {zones} ({region}), family '{','.join(families)}'...", flush=True)
@@ -379,12 +383,12 @@ def main():
         
         zones_out.append({
             "zone": zone,
-            "flavors": flavors
+            "zoneOfferings": flavors
         })
 
     output = {
         "region": region,
-        "zones": zones_out
+        "offerings": zones_out
     }
     OUTPUT = json.dumps(output)
     print(OUTPUT, flush=True)

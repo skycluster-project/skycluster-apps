@@ -76,7 +76,7 @@ def main():
         sys.exit(2)
 
     top_region = require_env("REGION")
-    zones: List[Dict[str, Any]] = payload.get("zones", [])
+    zones: List[Dict[str, Any]] = payload.get("images", [])
 
     if not top_region or not isinstance(zones, list):
         eprint("INPUT_JSON must include 'region' and 'zones' array.")
@@ -125,7 +125,7 @@ def main():
             }
         )
 
-    output = {"region": top_region, "zones": out_zones}
+    output = {"region": top_region, "images": out_zones}
     OUTPUT = json.dumps(output)
     print(OUTPUT, flush=True)
     #  print into /dev/termination-log

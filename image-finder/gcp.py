@@ -36,7 +36,7 @@ except KeyError:
 
 TOP_REGION = os.getenv("REGION")
 output_path = os.environ.get("OUTPUT_PATH")
-ZONES = input_json.get("zones", [])
+ZONES = input_json.get("images", [])
 ARCH = "X86_64"
 
 if not TOP_REGION:
@@ -123,7 +123,7 @@ for z in ZONES:
 
 OUTPUT = {
     "region": TOP_REGION,
-    "zones": OUT
+    "images": OUT
 }
 
 OUTPUT = json.dumps(output)

@@ -73,32 +73,6 @@ def to_title_label(name: str) -> str:
     # "Standard_D4s_v5" -> "Standard D4S V5"
     return re.sub(r"[_\-]", " ", name).replace("  ", " ").title()
 
-def read_input() -> Tuple[str, List[str]]:
-    data_str = os.environ.get("INPUT_JSON")
-    if not data_str:
-        die("INPUT_JSON env var is missing or empty")
-    try:
-        data = json.loads(data_str)
-    except Exception as e:
-        die(f"Failed to parse INPUT_JSON: {e}")
-
-    region = os.environ.get("REGION")
-    if not region:
-        die("No region provided in env var REGION")
-
-    zones_raw = [z.get("name") for z in data.get("zones", []) if z.get("name")]
-    if not zones_raw:
-        die("No zones provided in INPUT_JSON")
-
-    # Normalize zones: accept "1", "2", "3", or "eastus-1" style -> keep the digit
-    zones_norm = []
-    for z in zones_raw:
-        m = re.search(r"(\d+)$", str(z))
-        if not m:
-            die(f"Zone name not understood: {z} (expected '1', '2', '3', or '<region>-<digit>')")
-        zones_norm.append(m.group(1))  # "1", "2", "3"
-    return region, zones_norm
-
 def read_families() -> List[str]:
     fam = os.environ.get("FAMILY")
     if not fam:
@@ -272,9 +246,13 @@ def retail_price_for_size(region: str, size_name: str, spot: bool) -> Optional[D
 # ----------------- Main -----------------
 
 def main():
-    region, zones = read_input()
+    region = os.environ.get("REGION")
     output_path = os.environ.get("OUTPUT_PATH")
-    families = read_families()
+
+    data = json.loads(os.environ.get("INPUT_JSON", "{}"))
+    zones = [z["zone"] for z in data["offerings"]]
+    families = [f.get("nameLabel") for z in data.get("offerings", []) for f in z.get("zoneOfferings", [])]
+    
     azure_cfg = os.environ.get("AZ_CONFIG_JSON")
     azure_cred = json.loads(azure_cfg) if azure_cfg else None
     subscription_id = azure_cred.get("subscriptionId") if azure_cred else None
@@ -371,7 +349,7 @@ def main():
 
     output = {
         "region": region,
-        "zones": [{"zone": z, "flavors": zv} for z, zv in zone_flavors.items()]
+        "offerings": [{"zone": z, "zoneOfferings": zv} for z, zv in zone_flavors.items()]
     }
     # print(json.dumps(output, indent=2))
     OUTPUT = json.dumps(output)

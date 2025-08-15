@@ -184,9 +184,31 @@ def main():
     data = json.loads(data_str)
     if not data:
         raise SystemExit("INPUT_JSON env var is missing or empty")
+    
+    """
+    Example INPUT_JSON:
+    {
+    "region": "eastus",
+    "offerings": [
+        {
+          "zone": "1",
+          "zoneOfferings": [
+            {
+              "nameLabel": "Standard_A"
+            },
+            {
+              "nameLabel": "Standard_B"
+            }
+          ]
+        }
+      ]
+    }
+    """
+    
+    
 
     # Extract list of zone names
-    zones = [z["name"] for z in data["zones"]]
+    zones = [z["zone"] for z in data["offerings"]]
     if not zones:
         raise SystemExit("No zones provided in INPUT_JSON")
 
@@ -194,17 +216,16 @@ def main():
     region = os.environ.get("REGION")
     if not region:
         raise SystemExit("No region provided in env var REGION")
-        
-    family = os.environ.get("FAMILY")
-    families = family.split(",") if family else None
+    
+    families = [f.get("nameLabel") for z in data.get("offerings", []) for f in z.get("zoneOfferings", [])]
     ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
     SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
     spot_hours = int(os.environ.get("SPOT_LOOKBACK_HOURS", "24"))
 
-    if not region or not zones or not family:
+    if not region or not zones or not families:
         raise SystemExit("Missing required env vars: REGION, ZONE, FAMILY")
 
-    print(f"Finding offered instance types in {zones} ({region}), family '{family}'...", flush=True)
+    print(f"Finding offered instance types in {zones} ({region}), family '{families}'...", flush=True)
 
     session = boto3.Session(aws_access_key_id=ACCESS_KEY_ID, aws_secret_access_key=SECRET_ACCESS_KEY)
 
@@ -251,12 +272,12 @@ def main():
             })
         zones_out.append({
             "zone": zone,
-            "flavors": flavors
+            "zoneOfferings": flavors
         })
 
     output = {
         "region": region,
-        "zones": zones_out
+        "offerings": zones_out
     }
     OUTPUT = json.dumps(output)
     print(OUTPUT, flush=True)

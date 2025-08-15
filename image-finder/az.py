@@ -157,7 +157,7 @@ def main() -> None:
         sys.exit(2)
 
     location = require_env("REGION")
-    zones = payload.get("zones", [])
+    zones = payload.get("images", [])
     if not location or not isinstance(zones, list):
         err("INPUT_JSON must include 'region' and an array 'zones'")
         sys.exit(2)
@@ -220,7 +220,7 @@ def main() -> None:
             "generation": generation,
         })
 
-    output = {"region": location, "zones": out_zones}
+    output = {"region": location, "images": out_zones}
     OUTPUT = json.dumps(output)
     print(OUTPUT, flush=True)
     #  print into /dev/termination-log
