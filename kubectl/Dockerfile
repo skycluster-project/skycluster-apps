@@ -3,10 +3,13 @@ FROM bitnami/kubectl:1.30
 USER root
 
 ENV WORKDIR=/work \
-    ISTIO_VER=1.27.0
+    ISTIO_VER=1.27.0 \
+    HELM_VER=3.18.6
 
 # Fixed versioned URLs
-ENV ISTIOCTL_TGZ=https://github.com/istio/istio/releases/download/1.27.0/istioctl-1.27.0-linux-amd64.tar.gz
+ENV ISTIO_TGZ=https://github.com/istio/istio/releases/download/${ISTIO_VER}/istio-${ISTIO_VER}-linux-amd64.tar.gz \
+    ISTIOCTL_TGZ=https://github.com/istio/istio/releases/download/${ISTIO_VER}/istioctl-${ISTIO_VER}-linux-amd64.tar.gz \
+    HELM_TGZ=https://get.helm.sh/helm-v${HELM_VER}-linux-amd64.tar.gz
 
 RUN set -eux; \
     apt-get update; \
@@ -25,7 +28,14 @@ RUN mkdir -p "${WORKDIR}"; \
     chmod +x istioctl; \
     mv istioctl /usr/local/bin/istioctl; \
     rm -rf istioctl.tgz; \
-    rm -rf istio.tar.gz
+    rm -rf istio.tar.gz; \
+    \
+    # Install Helm
+    curl -fsSL "${HELM_TGZ}" -o helm.tgz; \
+    tar -xzf helm.tgz; \
+    mv linux-amd64/helm /usr/local/bin/helm; \
+    chmod +x /usr/local/bin/helm; \
+    rm -rf helm.tgz linux-amd64
 
 
 WORKDIR ${WORKDIR}
