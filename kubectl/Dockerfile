@@ -44,8 +44,6 @@ RUN mkdir -p "${WORKDIR}"; \
     /usr/local/google-cloud-sdk/install.sh --quiet --additional-components gke-gcloud-auth-plugin; \
     rm -f gcloud.tar.gz; \
     ln -s /usr/local/google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud; \
-    ln -s /usr/local/google-cloud-sdk/bin/gke-gcloud-auth-plugin /usr/local/bin/gke-gcloud-auth-plugin; \
-    gcloud components install gke-gcloud-auth-plugin --quiet
-
+    ln -s /usr/local/google-cloud-sdk/bin/gke-gcloud-auth-plugin /usr/local/bin/gke-gcloud-auth-plugin
 
 WORKDIR ${WORKDIR}
