@@ -1,0 +1,95 @@
+# redis-app-servicemonitors.yaml
+# ServiceMonitors for redis-app components so Prometheus can scrape /metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: gateway-servicemonitor
+  namespace: redis-app
+  labels:
+    release: kube-prom-stack
+spec:
+  selector:
+    matchLabels:
+      app: gateway
+  namespaceSelector:
+    matchNames:
+      - redis-app
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 5s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: backend-servicemonitor
+  namespace: redis-app
+  labels:
+    release: kube-prom-stack
+spec:
+  selector:
+    matchLabels:
+      app: backend
+  namespaceSelector:
+    matchNames:
+      - redis-app
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 5s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: worker-servicemonitor
+  namespace: redis-app
+  labels:
+    release: kube-prom-stack
+spec:
+  selector:
+    matchLabels:
+      app: worker
+  namespaceSelector:
+    matchNames:
+      - redis-app
+  endpoints:
+    - port: http  
+      targetPort: 8000
+      path: /metrics
+      interval: 5s
+---
+# Node exporter ServiceMonitor (if using kube-prometheus-stack's node-exporter DaemonSet)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: node-exporter-servicemonitor
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-node-exporter
+      app.kubernetes.io/instance: kube-prom-stack 
+  namespaceSelector:
+    matchNames:
+      - monitoring
+  endpoints:
+    - port: http-metrics
+      interval: 5s
+---
+# Kube-state-metrics ServiceMonitor (if using kube-prometheus-stack's kube-state-metrics Deployment)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kube-state-metrics-servicemonitor
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-state-metrics
+      app.kubernetes.io/instance: kube-prom-stack
+  namespaceSelector:
+    matchNames:
+      - monitoring
+  endpoints:
+    - port: http
+      interval: 5s
