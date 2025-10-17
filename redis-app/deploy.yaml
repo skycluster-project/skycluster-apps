@@ -73,7 +73,7 @@ spec:
       containers:
         - name: gateway
           image: etesami/redis-gateway:latest  # replace placeholder
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: REDIS_HOST
               value: "redis"
@@ -207,7 +207,7 @@ spec:
               cpu: "100m"
               memory: "128Mi"
             limits:
-              cpu: "1000m"
+              cpu: "2000m"
               memory: "512Mi"
 ---
 apiVersion: v1
@@ -250,7 +250,14 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 80
+          averageUtilization: 70
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 120  # 2 minutes instead of 5
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 60
 ---
 # yaml
 # apiVersion: autoscaling/v2
