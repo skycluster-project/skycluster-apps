@@ -56,7 +56,7 @@ metadata:
   name: gateway
   namespace: redis-app
 spec:
-  replicas: 2  # default replicas; tune for load testing
+  replicas: 1
   selector:
     matchLabels:
       app: gateway
@@ -94,6 +94,8 @@ kind: Service
 metadata:
   name: gateway
   namespace: redis-app
+  labels:
+    app: gateway
   annotations:
     # If Prometheus scrapes services instead of pods, these help
     prometheus.io/scrape: "true"
@@ -102,7 +104,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 80
+    - name: http
+      port: 80
       targetPort: 8000
   selector:
     app: gateway
@@ -114,7 +117,7 @@ metadata:
   name: backend
   namespace: redis-app
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: backend
@@ -130,7 +133,7 @@ spec:
       containers:
         - name: backend
           image: etesami/redis-backend:latest  # replace placeholder
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: REDIS_HOST
               value: "redis"
@@ -151,6 +154,8 @@ kind: Service
 metadata:
   name: backend
   namespace: redis-app
+  labels:
+    app: backend
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "8000"
@@ -158,7 +163,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 80
+    - name: http
+      port: 80
       targetPort: 8000
   selector:
     app: backend
@@ -170,7 +176,7 @@ metadata:
   name: worker
   namespace: redis-app
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: worker
@@ -186,7 +192,7 @@ spec:
       containers:
         - name: worker
           image: etesami/redis-worker:latest  # replace placeholder
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: REDIS_HOST
               value: "redis"
@@ -201,7 +207,7 @@ spec:
               cpu: "100m"
               memory: "128Mi"
             limits:
-              cpu: "500m"
+              cpu: "1000m"
               memory: "512Mi"
 ---
 apiVersion: v1
@@ -209,6 +215,8 @@ kind: Service
 metadata:
   name: worker
   namespace: redis-app
+  labels:
+    app: worker
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "8000"
@@ -216,29 +224,52 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 8000
+    - name: http
+      port: 8000
       targetPort: 8000
   selector:
     app: worker
 ---
 # # Example HorizontalPodAutoscaler for gateway (scale between 1 and 5 based on CPU)
 # # Note: ensure Metrics Server is installed in your cluster for CPU-based HPA to work.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: worker-hpa
+  namespace: redis-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worker
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+---
+# yaml
 # apiVersion: autoscaling/v2
 # kind: HorizontalPodAutoscaler
 # metadata:
-#   name: gateway-hpa
-#   namespace: redis-app
+#   name: worker-hpa
+#   namespace: perf-app
 # spec:
 #   scaleTargetRef:
 #     apiVersion: apps/v1
 #     kind: Deployment
-#     name: gateway
+#     name: worker
 #   minReplicas: 1
-#   maxReplicas: 5
+#   maxReplicas: 20
 #   metrics:
-#     - type: Resource
-#       resource:
-#         name: cpu
+#     - type: External
+#       external:
+#         metric:
+#           name: perfapp_queue_length
 #         target:
-#           type: Utilization
-#           averageUtilization: 50
+#           type: Value
+#           value: "10"   # scale until the queue length <= 10 (adjust to your needs)
