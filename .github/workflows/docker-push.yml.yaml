@@ -28,8 +28,9 @@ jobs:
           # - "ca-signer"
           # - "ca-gen"
           # - "image-finder"
-          - "instance-finder"
+          # - "instance-finder"
           # - "kubectl"
+          - "optimize-engine"
     permissions:
       contents: read
       packages: write
