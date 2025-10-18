@@ -10,11 +10,10 @@ RUN apt-get update && \
     chmod +x /kubectl && \
     rm -rf /var/lib/apt/lists/*
 
-# runtime: minimal Debian with venv + kubectl
-FROM debian:bullseye-slim
+FROM python:3.10-slim
 COPY --from=builder /venv /venv
 COPY --from=builder /kubectl /usr/local/bin/kubectl
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 ENV PATH=/venv/bin:$PATH
-ENTRYPOINT ["/bin/sh","-c"]
+ENTRYPOINT ["python"]
