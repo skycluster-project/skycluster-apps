@@ -16,4 +16,4 @@ COPY --from=builder /kubectl /usr/local/bin/kubectl
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates python3 python3-venv && \
     rm -rf /var/lib/apt/lists/*
 ENV PATH=/venv/bin:$PATH
-ENTRYPOINT ["python"]
+ENTRYPOINT ["/bin/bash", "-c"]
