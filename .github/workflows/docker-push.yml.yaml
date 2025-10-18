@@ -30,7 +30,7 @@ jobs:
           # - "image-finder"
           # - "instance-finder"
           # - "kubectl"
-          - "optimize-engine"
+          - "optimizer-engine"
     permissions:
       contents: read
       packages: write
