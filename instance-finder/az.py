@@ -327,9 +327,16 @@ def main():
                 zone_flavors[z_req] = []
             if z_req not in supported_zones:
                 continue
+
+            gpu_enabled = gpu_info.get("enabled", False)
+            if gpu_enabled:
+                nameLabel = f"{vcpus}vCPU-{mem_gb_str}-{gpu_info['count']}x{gpu_info['model']}-{gpu_info['memory']}"
+            else:
+                nameLabel = f"{vcpus}vCPU-{mem_gb_str}"
+                
             zone_flavors[z_req].append({
                 "name": size_name,
-                "nameLabel": f"{vcpus}vCPU-{mem_gb_str}",
+                "nameLabel": nameLabel,
                 "vcpus": vcpus,
                 "ram": f"{mem_gb_str}",
                 "price": dec_to_str_money(ond),

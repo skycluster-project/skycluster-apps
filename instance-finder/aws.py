@@ -252,9 +252,15 @@ def main():
             ond = on_demand_price_usd_per_hour(pricing, region, it_name)
             spot = recent_spot_price_usd_per_hour(ec2, zone, it_name, lookback_hours=spot_hours)
 
+            gpu_enabled = gpu_info.get("enabled", False)
+            if gpu_enabled:
+                nameLabel = f"{vcpus}vCPU-{ram_gib_str}-{gpu_info['count']}x{gpu_info['model']}-{gpu_info['memory']}"
+            else:
+                nameLabel = f"{vcpus}vCPU-{ram_gib_str}"
+
             flavors.append({
                 "name": it_name,
-                "nameLabel": f"{vcpus}vCPU-{ram_gib_str}",
+                "nameLabel": nameLabel,
                 "vcpus": vcpus,
                 "ram": ram_gib_str,
                 "price": dec_to_str_money(ond),

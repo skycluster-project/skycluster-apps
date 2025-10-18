@@ -362,9 +362,15 @@ def main():
                 billing_service, compute_service_name, region, mt.name, vcpus, mt.memory_mb or 0
             )
 
+            gpu_enabled = gpu_info.get("enabled", False)
+            if gpu_enabled:
+                nameLabel = f"{vcpus}vCPU-{ram_gb_str}-{gpu_info['count']}x{gpu_info['model']}-{gpu_info['memory']}"
+            else:
+                nameLabel = f"{vcpus}vCPU-{ram_gb_str}"
+
             flavors.append({
                 "name": mt.name,
-                "nameLabel": f"{vcpus}vCPU-{ram_gb_str}",
+                "nameLabel": nameLabel,
                 "vcpus": vcpus,
                 "ram": ram_gb_str,
                 "price": dec_to_str_money(ond_price),

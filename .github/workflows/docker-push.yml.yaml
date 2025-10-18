@@ -27,9 +27,9 @@ jobs:
           # - "headscale-server"
           # - "ca-signer"
           # - "ca-gen"
-          # - "image-finder"
+          - "image-finder"
           # - "instance-finder"
-          - "kubectl"
+          # - "kubectl"
     permissions:
       contents: read
       packages: write
