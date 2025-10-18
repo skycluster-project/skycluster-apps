@@ -10,10 +10,10 @@ RUN apt-get update && \
     chmod +x /kubectl && \
     rm -rf /var/lib/apt/lists/*
 
-FROM python:3.10-slim
+FROM debian:bullseye-slim
 COPY --from=builder /venv /venv
 COPY --from=builder /kubectl /usr/local/bin/kubectl
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && \
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates python3 python3-venv && \
     rm -rf /var/lib/apt/lists/*
 ENV PATH=/venv/bin:$PATH
 ENTRYPOINT ["python"]
