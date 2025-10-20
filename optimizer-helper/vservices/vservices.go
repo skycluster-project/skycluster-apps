@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 
@@ -100,12 +101,14 @@ func main() {
     if cmData, ok := cm.Data["flavors.yaml"]; ok {
       var zoneOfferings []ZoneOfferings
       if err := yaml.Unmarshal([]byte(cmData), &zoneOfferings); err == nil {
+        fmt.Printf("parsed flavors.yaml in configmap %s/%s with %d zone offerings\n", cm.Namespace, cm.Name, len(zoneOfferings))
         for _, zo := range zoneOfferings {
+          fmt.Printf("  found zone offering: %s, %d offerings\n", zo.Zone, len(zo.Offerings))
           for _, of := range zo.Offerings {
-            priceFloat, err := strconv.ParseFloat(of.Price, 64)
+            priceFloat, err := parseAmount(of.Price)
             if err != nil {
-              // skip invalid price
-              continue
+              fmt.Fprintf(os.Stderr, "failed to parse price for vservice %s in configmap %s/%s: %v\n", of.NameLabel, cm.Namespace, cm.Name, err)
+              continue // skip invalid price
             }
             vServicesList = append(vServicesList, vServiceStruct{
               VServiceName:     of.NameLabel,
@@ -136,8 +139,8 @@ func main() {
       os.Exit(2)
     }
     for _, mk8s := range managedK8s {
-      priceFloat, err1 := strconv.ParseFloat(mk8s.Price, 64)
-      priceOverheadFloat, err2 := strconv.ParseFloat(mk8s.Overhead.Cost, 64)
+      priceFloat, err1 := parseAmount(mk8s.Price)
+      priceOverheadFloat, err2 := parseAmount(mk8s.Overhead.Cost)
       if err1 != nil || err2 != nil {
         fmt.Fprintf(os.Stderr, "failed to parse price or overhead for managed k8s vservice %s in configmap %s/%s: price error: %v; overhead error: %v\n", mk8s.Name, cm.Namespace, cm.Name, err1, err2)
         os.Exit(2)
@@ -166,4 +169,34 @@ func main() {
   }
 
   fmt.Printf("wrote %d virtual services to %s\n", len(vServicesList), outputPath)
+}
+
+
+
+func parseAmount(s string) (float64, error) {
+	s = strings.TrimSpace(s)
+
+	// handle parentheses as negative: (123.45)
+	neg := false
+	if strings.HasPrefix(s, "(") && strings.HasSuffix(s, ")") {
+		neg = true
+		s = s[1 : len(s)-1]
+	}
+
+	// remove dollar sign(s), commas and surrounding spaces
+	s = strings.ReplaceAll(s, "$", "")
+	s = strings.ReplaceAll(s, ",", "")
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return 0, fmt.Errorf("no numeric content")
+	}
+
+	v, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0, err
+	}
+	if neg {
+		v = -v
+	}
+	return v, nil
 }
