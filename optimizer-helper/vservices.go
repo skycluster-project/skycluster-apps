@@ -1,0 +1,169 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"strconv"
+
+	"gopkg.in/yaml.v3"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+)
+
+type vServiceStruct struct {
+  VServiceName     string  `json:"vservice_name,omitempty"`
+  VServiceKind     string  `json:"vservice_kind,omitempty"`
+  ProviderName     string  `json:"provider_name,omitempty"`
+  ProviderPlatform string  `json:"provider_platform,omitempty"`
+  ProviderRegion   string  `json:"provider_region,omitempty"`
+  ProviderZone     string  `json:"provider_zone,omitempty"`
+  DeployCost       float64 `json:"deploy_cost,omitempty"`
+  Availability     int     `json:"availability,omitempty"`
+}
+
+// Local placeholder types for YAML unmarshalling.
+// Replace or extend with your actual types (cv1a1.ZoneOfferings, hv1a1.ManagedK8s).
+type ZoneOfferings struct {
+  Zone      string `yaml:"zone"`
+  Offerings []struct {
+    NameLabel string `yaml:"nameLabel"`
+    Price     string `yaml:"price"`
+  } `yaml:"offerings"`
+}
+
+type ManagedK8s struct {
+  Name      string `yaml:"name"`
+  NameLabel string `yaml:"nameLabel"`
+  Price     string `yaml:"price"`
+  Overhead  struct {
+    Cost string `yaml:"cost"`
+  } `yaml:"overhead"`
+}
+
+func main() {
+  ctx := context.Background()
+
+  // OUTPUT_PATH env var controls where to write the JSON file inside the pod.
+  // Default is /tmp/vservices.json (placeholder; change as needed).
+  outputPath := os.Getenv("OUTPUT_PATH")
+  if outputPath == "" {
+    outputPath = "/tmp/vservices.json" // placeholder default
+  }
+
+  // LABEL_SELECTOR env var optional override for the configmap label selector.
+  // Default uses the two labels from the snippet.
+  labelSelector := os.Getenv("LABEL_SELECTOR")
+  if labelSelector == "" {
+    labelSelector = "skycluster.io/config-type=provider-profile,skycluster.io/managed-by=skycluster"
+  }
+
+  // NAMESPACE env var optional: if empty, list across all namespaces.
+  // To restrict to a single namespace, set NAMESPACE=<your-namespace>.
+  namespace := os.Getenv("NAMESPACE") // empty => all namespaces
+
+  // In-cluster config
+  cfg, err := rest.InClusterConfig()
+  if err != nil {
+    fmt.Fprintf(os.Stderr, "failed to get in-cluster config: %v\n", err)
+    os.Exit(2)
+  }
+
+  clientset, err := kubernetes.NewForConfig(cfg)
+  if err != nil {
+    fmt.Fprintf(os.Stderr, "failed to create kubernetes clientset: %v\n", err)
+    os.Exit(2)
+  }
+
+  listOptions := metav1.ListOptions{
+    LabelSelector: labelSelector,
+  }
+
+  var vServicesList []vServiceStruct
+
+  // List ConfigMaps (namespace == "" => all namespaces)
+  cmList, err := clientset.CoreV1().ConfigMaps(namespace).List(ctx, listOptions)
+  if err != nil {
+    fmt.Fprintf(os.Stderr, "failed to list configmaps: %v\n", err)
+    os.Exit(2)
+  }
+
+  for _, cm := range cmList.Items {
+    pName := cm.Labels["skycluster.io/provider-profile"]
+    pPlatform := cm.Labels["skycluster.io/provider-platform"]
+    pRegion := cm.Labels["skycluster.io/provider-region"]
+
+    // flavors.yaml: best-effort parsing (ignore errors as in original snippet)
+    if cmData, ok := cm.Data["flavors.yaml"]; ok {
+      var zoneOfferings []ZoneOfferings
+      if err := yaml.Unmarshal([]byte(cmData), &zoneOfferings); err == nil {
+        for _, zo := range zoneOfferings {
+          for _, of := range zo.Offerings {
+            priceFloat, err := strconv.ParseFloat(of.Price, 64)
+            if err != nil {
+              // skip invalid price
+              continue
+            }
+            vServicesList = append(vServicesList, vServiceStruct{
+              VServiceName:     of.NameLabel,
+              VServiceKind:     "ComputeProfile",
+              ProviderName:     pName,
+              ProviderPlatform: pPlatform,
+              ProviderRegion:   pRegion,
+              ProviderZone:     zo.Zone,
+              DeployCost:       priceFloat,
+              Availability:     10000, // placeholder assumption
+            })
+          }
+        }
+      } else {
+        // best-effort: log and continue
+        fmt.Fprintf(os.Stderr, "warning: failed to unmarshal flavors.yaml in configmap %s/%s: %v\n", cm.Namespace, cm.Name, err)
+      }
+    }
+
+    // managed-k8s.yaml: treat parse errors as fatal (mirrors original snippet)
+    cmData, ok := cm.Data["managed-k8s.yaml"]
+    if !ok {
+      continue
+    }
+    var managedK8s []ManagedK8s
+    if err := yaml.Unmarshal([]byte(cmData), &managedK8s); err != nil {
+      fmt.Fprintf(os.Stderr, "failed to unmarshal managed-k8s config map %s/%s: %v\n", cm.Namespace, cm.Name, err)
+      os.Exit(2)
+    }
+    for _, mk8s := range managedK8s {
+      priceFloat, err1 := strconv.ParseFloat(mk8s.Price, 64)
+      priceOverheadFloat, err2 := strconv.ParseFloat(mk8s.Overhead.Cost, 64)
+      if err1 != nil || err2 != nil {
+        fmt.Fprintf(os.Stderr, "failed to parse price or overhead for managed k8s vservice %s in configmap %s/%s: price error: %v; overhead error: %v\n", mk8s.Name, cm.Namespace, cm.Name, err1, err2)
+        os.Exit(2)
+      }
+      vServicesList = append(vServicesList, vServiceStruct{
+        VServiceName:     mk8s.NameLabel,
+        VServiceKind:     "ManagedKubernetes",
+        ProviderName:     pName,
+        ProviderPlatform: pPlatform,
+        ProviderRegion:   pRegion,
+        DeployCost:       priceFloat + priceOverheadFloat,
+        Availability:     100000, // placeholder assumption
+      })
+    }
+  }
+
+  b, err := json.MarshalIndent(vServicesList, "", "  ")
+  if err != nil {
+    fmt.Fprintf(os.Stderr, "failed to marshal virtual services: %v\n", err)
+    os.Exit(2)
+  }
+
+  if err := os.WriteFile(outputPath, b, 0644); err != nil {
+    fmt.Fprintf(os.Stderr, "failed to write output file %s: %v\n", outputPath, err)
+    os.Exit(2)
+  }
+
+  fmt.Printf("wrote %d virtual services to %s\n", len(vServicesList), outputPath)
+}
