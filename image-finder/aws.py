@@ -4,7 +4,7 @@ import os
 import sys
 import subprocess
 from typing import Any, Dict, List, Optional
-
+import re 
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 
@@ -56,15 +56,31 @@ def find_latest_ami(region: str, pattern: str) -> Optional[str]:
     if not images:
         return None
 
-    # Exclude AMIs that have ProductCodes (indicates AWS Marketplace / paid images)
-    free_images = [im for im in images if not im.get("ProductCodes")]
+
+    # regex to match 'pro' as a standalone token or preceded/followed by non-alphanumeric
+    pro_regex = re.compile(r"(?<![A-Za-z0-9])pro(?![A-Za-z0-9])", re.IGNORECASE)
+
+    def looks_like_pro(img: Dict[str, Any]) -> bool:
+        # Marketplace / paid images (ProductCodes present)
+        if img.get("ProductCodes"):
+            return True
+        # Check common textual fields for 'pro' (name, description, image location/source)
+        for fld in ("Name", "Description", "ImageLocation"):
+            val = img.get(fld)
+            if isinstance(val, str) and pro_regex.search(val):
+                return True
+        return False
+
+    print("Filter images to find free images")
+    # Exclude images that look like Pro/paid
+    free_images = [im for im in images if not looks_like_pro(im)]
 
     if not free_images:
         return None
 
     # Sort by CreationDate ascending, pick the last (newest)
-    images.sort(key=lambda im: im.get("CreationDate", ""))
-    return images[-1].get("ImageId")
+    free_images.sort(key=lambda im: im.get("CreationDate", ""))
+    return free_images[-1].get("ImageId")
 
 
 def main():
