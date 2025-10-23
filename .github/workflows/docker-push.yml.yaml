@@ -27,11 +27,11 @@ jobs:
           # - "headscale-server"
           # - "ca-signer"
           # - "ca-gen"
-          # - "image-finder"
+          - "image-finder"
           # - "instance-finder"
           # - "kubectl"
           #- "optimizer-engine"
-          - "optimizer-helper"
+          # - "optimizer-helper"
     permissions:
       contents: read
       packages: write

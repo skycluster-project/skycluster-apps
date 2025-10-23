@@ -56,6 +56,12 @@ def find_latest_ami(region: str, pattern: str) -> Optional[str]:
     if not images:
         return None
 
+    # Exclude AMIs that have ProductCodes (indicates AWS Marketplace / paid images)
+    free_images = [im for im in images if not im.get("ProductCodes")]
+
+    if not free_images:
+        return None
+
     # Sort by CreationDate ascending, pick the last (newest)
     images.sort(key=lambda im: im.get("CreationDate", ""))
     return images[-1].get("ImageId")
