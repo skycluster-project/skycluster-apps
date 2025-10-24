@@ -10,7 +10,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 
 from label_mapper import map_label
 
-OWNER = "amazon"
+OWNER = "099720109477" # Canonical
 ARCH = "x86_64"
 TERMINATION_LOG = "/dev/termination-log"
 
@@ -40,7 +40,7 @@ def find_latest_ami(region: str, pattern: str) -> Optional[str]:
     )
     ec2 = session.client("ec2")
 
-    name_value = f"*{pattern}*" if pattern else "*"
+    name_value = f"{pattern}" if pattern else "*"
     filters = [
         {"Name": "name", "Values": [name_value]},
         {"Name": "architecture", "Values": [ARCH]},
@@ -111,13 +111,13 @@ def main():
 
     for z in zones:
         name_label = z.get("nameLabel", "")
+        pattern = z.get("pattern", "")
         zone = z.get("zone", "")
         region = top_region
 
-        mapped_label = map_label(name_label)["aws"]
-        pattern = mapped_label or ""
+        pattern = pattern or name_label
         print(
-            f"Searching for AMI with pattern '*{pattern}*' in region '{region}' zone '{zone}' (nameLabel='{name_label}')"
+            f"Searching for AMI with pattern '{pattern}' in region '{region}' zone '{zone}' (nameLabel='{name_label}')"
         )
 
         try:
