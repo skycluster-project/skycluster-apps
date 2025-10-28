@@ -2,18 +2,7 @@
 
 Build and push images into docker hub. Then deploy the app into your cluster.
 
-Deploy `netshoot` in the same namespace and within the pod generate workload:
 
-```bash
-for i in $(seq 1 100); do curl -X POST http://gateway:80/jobs -H "Content-Type: application/json" -d '{"payload": {"n": '"$i"'}}'; done
-```
-
-```bash
-# bash
-# Install hey (https://github.com/rakyll/hey)
-# 50 concurrent workers sending request for 30 seconds
-hey -z 30s -c 50 -m POST -H "Content-Type: application/json" -d '{"payload": {"hello": "world"}}' http://gateway:80/jobs
-```
 
 
 # Deploy Prometheous
@@ -44,11 +33,11 @@ kubectl -n monitoring port-forward svc/kube-prom-stack-grafana 3000:80
 kubectl --namespace monitoring get secrets kube-prom-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
 ```
 
-The helm chart usually auto-configures a Prometheus data source named "Prometheus". If not present, add a Prometheus data source:
+**This following section needs to be revised.** 
 
-New → Data source → Prometheus
+Create useful Grafana panels (queries) Create a new dashboard in Grafana:
 
-Create useful Grafana panels (queries) Create a new dashboard in Grafana and add panels with the following queries (set the data source to Prometheus):
+```
 Enqueued jobs rate (per second) Query:
 rate(gateway_jobs_enqueued_total[1m])
 
@@ -73,6 +62,7 @@ rate(worker_jobs_processed_total[1m])
 
 Pod CPU usage for each component (requires kube-state metrics + node metrics which are included in kube-prometheus-stack) Example (gateway pods):
 sum(rate(container_cpu_usage_seconds_total{namespace="redisapp", pod=~"gateway-.*", image!="", container!="POD"}[5m])) by (pod)
+```
 
 
 
