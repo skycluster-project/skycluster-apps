@@ -68,6 +68,14 @@ type ManagedK8s struct {
   } `yaml:"overhead"`
 }
 
+type DeviceZoneSpec struct {
+	Type      string             `json:"type" yaml:"type,omitempty"`
+	Zone      string             `json:"zone" yaml:"zone,omitempty"`
+	PrivateIp string             `json:"privateIp" yaml:"privateIp,omitempty"`
+	PublicIp  string             `json:"publicIp,omitempty" yaml:"publicIp,omitempty"`
+	Configs   *InstanceOffering   `json:"configs,omitempty" yaml:"configs,omitempty"`
+}
+
 func main() {
   ctx := context.Background()
 
@@ -119,6 +127,7 @@ func main() {
     pName := cm.Labels["skycluster.io/provider-profile"]
     pPlatform := cm.Labels["skycluster.io/provider-platform"]
     pRegion := cm.Labels["skycluster.io/provider-region"]
+    fmt.Printf("Processing configmap %s/%s\n", cm.Namespace, cm.Name)
 
     // flavors.yaml: best-effort parsing (ignore errors as in original snippet)
     if cmData, ok := cm.Data["flavors.yaml"]; ok {
@@ -152,31 +161,62 @@ func main() {
     }
 
     // managed-k8s.yaml: treat parse errors as fatal (mirrors original snippet)
-    cmData, ok := cm.Data["managed-k8s.yaml"]
-    if !ok {
-      continue
-    }
-    var managedK8s []ManagedK8s
-    if err := yaml.Unmarshal([]byte(cmData), &managedK8s); err != nil {
-      fmt.Fprintf(os.Stderr, "failed to unmarshal managed-k8s config map %s/%s: %v\n", cm.Namespace, cm.Name, err)
-      os.Exit(2)
-    }
-    for _, mk8s := range managedK8s {
-      priceFloat, err1 := parseAmount(mk8s.Price)
-      priceOverheadFloat, err2 := parseAmount(mk8s.Overhead.Cost)
-      if err1 != nil || err2 != nil {
-        fmt.Fprintf(os.Stderr, "failed to parse price or overhead for managed k8s vservice %s in configmap %s/%s: price error: %v; overhead error: %v\n", mk8s.Name, cm.Namespace, cm.Name, err1, err2)
+    if cmData, ok := cm.Data["managed-k8s.yaml"]; ok {
+      var managedK8s []ManagedK8s
+      if err := yaml.Unmarshal([]byte(cmData), &managedK8s); err != nil {
+        fmt.Fprintf(os.Stderr, "failed to unmarshal managed-k8s config map %s/%s: %v\n", cm.Namespace, cm.Name, err)
         os.Exit(2)
       }
-      vServicesList = append(vServicesList, vServiceStruct{
-        VServiceName:     mk8s.NameLabel,
-        VServiceKind:     "ManagedKubernetes",
-        ProviderName:     pName,
-        ProviderPlatform: pPlatform,
-        ProviderRegion:   pRegion,
-        DeployCost:       priceFloat + priceOverheadFloat,
-        Availability:     100000, // placeholder assumption
-      })
+      fmt.Println("parsed managed-k8s.yaml with", len(managedK8s), "managed k8s offerings")
+      for _, mk8s := range managedK8s {
+        priceFloat, err1 := parseAmount(mk8s.Price)
+        priceOverheadFloat, err2 := parseAmount(mk8s.Overhead.Cost)
+        if err1 != nil || err2 != nil {
+          fmt.Fprintf(os.Stderr, "failed to parse price or overhead for managed k8s vservice %s in configmap %s/%s: price error: %v; overhead error: %v\n", mk8s.Name, cm.Namespace, cm.Name, err1, err2)
+          os.Exit(2)
+        }
+        vServicesList = append(vServicesList, vServiceStruct{
+          VServiceName:     mk8s.NameLabel,
+          VServiceKind:     "ManagedKubernetes",
+          ProviderName:     pName,
+          ProviderPlatform: pPlatform,
+          ProviderRegion:   pRegion,
+          DeployCost:       priceFloat + priceOverheadFloat,
+          Availability:     100000, // placeholder assumption
+        })
+      }
+    }
+
+    // baremetal workers
+    if cmData, ok := cm.Data["worker"]; ok {
+      var workerSpecs map[string]DeviceZoneSpec
+      if err := yaml.Unmarshal([]byte(cmData), &workerSpecs); err != nil {
+        fmt.Fprintf(os.Stderr, "failed to unmarshal workers config map %s/%s: %v\n", cm.Namespace, cm.Name, err)
+        os.Exit(2)
+      }
+      fmt.Printf("parsed workers in configmap %s/%s with %d device specs\n", cm.Namespace, cm.Name, len(workerSpecs))
+      for devName, devSpec := range workerSpecs {
+        if devSpec.Configs == nil {continue}
+        fmt.Printf(" Processing device %s\n", devName)
+        priceFloat, err := parseAmount(devSpec.Configs.Price)
+        if err != nil {
+          fmt.Fprintf(os.Stderr, "failed to parse price for vservice %s in configmap %s/%s: %v\n", devName, cm.Namespace, cm.Name, err)
+          continue // skip invalid price
+        }
+        computeValueNormalized := NormalizeToTOPS(float64(devSpec.Configs.GPU.Count), devSpec.Configs.GPU.Unit)
+        devNameLabel := fmt.Sprintf("%dvCPU-%s-%dTOPS", devSpec.Configs.VCPUs, devSpec.Configs.RAM, int(computeValueNormalized))
+        fmt.Printf("  Device %s: %s\n", devName, devNameLabel)
+        vServicesList = append(vServicesList, vServiceStruct{
+          VServiceName:     devNameLabel,
+          VServiceKind:     "ComputeProfile",
+          ProviderName:     pName,
+          ProviderPlatform: pPlatform,
+          ProviderRegion:   pRegion,
+          ProviderZone:     devSpec.Zone,
+          DeployCost:       priceFloat,
+          Availability:     1, // one device
+        })
+      }
     }
   }
 
@@ -222,4 +262,23 @@ func parseAmount(s string) (float64, error) {
 		v = -v
 	}
 	return v, nil
+}
+
+// NormalizeToTOPS converts a compute value (with unit) into TOPS
+func NormalizeToTOPS(value float64, unit string) float64 {
+	unit = strings.ToUpper(strings.TrimSpace(unit))
+
+	switch unit {
+	case "GFLOPS":
+		// 1 GFLOP = 0.001 TFLOP ≈ 0.002 TOPS
+		return value * 0.002
+	case "TFLOPS":
+		// 1 TFLOP ≈ 2 TOPS (rough heuristic for FP32->INT8 conversion)
+		return value * 2.0
+	case "TOPS":
+		return value
+	default:
+		fmt.Printf("Warning: Unknown unit '%s', returning raw value\n", unit)
+		return value
+	}
 }

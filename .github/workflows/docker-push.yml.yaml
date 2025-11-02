@@ -31,7 +31,7 @@ jobs:
           # - "instance-finder"
           # - "kubectl"
           #- "optimizer-engine"
-          # - "optimizer-helper"
+          - "optimizer-helper"
     permissions:
       contents: read
       packages: write
