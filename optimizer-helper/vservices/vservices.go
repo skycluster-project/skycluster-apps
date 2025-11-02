@@ -22,7 +22,7 @@ type vServiceStruct struct {
   ProviderPlatform string  `json:"provider_platform,omitempty"`
   ProviderRegion   string  `json:"provider_region,omitempty"`
   ProviderZone     string  `json:"provider_zone,omitempty"`
-  DeployCost       float64 `json:"deploy_cost,omitempty"`
+  DeployCost       float64 `json:"deploy_cost"`
   Availability     int     `json:"availability,omitempty"`
 }
 
@@ -204,7 +204,7 @@ func main() {
           continue // skip invalid price
         }
         computeValueNormalized := NormalizeToTOPS(float64(devSpec.Configs.GPU.Count), devSpec.Configs.GPU.Unit)
-        devNameLabel := fmt.Sprintf("%dvCPU-%s-%dTOPS", devSpec.Configs.VCPUs, devSpec.Configs.RAM, int(computeValueNormalized))
+        devNameLabel := fmt.Sprintf("%dvCPU-%s-%dxTOPS", devSpec.Configs.VCPUs, devSpec.Configs.RAM, int(computeValueNormalized))
         fmt.Printf("  Device %s: %s\n", devName, devNameLabel)
         vServicesList = append(vServicesList, vServiceStruct{
           VServiceName:     devNameLabel,
