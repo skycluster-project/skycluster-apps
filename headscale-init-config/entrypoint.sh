@@ -84,6 +84,7 @@ data:
   preauth.json: $(echo "$PREAUTH_OUT" | base64 -w0)
 stringData:
   api_server: "$API_SERVER"
+  auth_key: "$(jq -r '.key' "$PREAUTH_OUT")"
 EOF
 
 echo "[SUCCESS] Secret created successfully."

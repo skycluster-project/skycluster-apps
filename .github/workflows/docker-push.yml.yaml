@@ -23,7 +23,7 @@ jobs:
       matrix:
         app: 
           # - "headscale-init"
-          # - "headscale-init-config"
+          - "headscale-init-config"
           # - "headscale-server"
           # - "ca-signer"
           # - "ca-gen"
@@ -31,7 +31,7 @@ jobs:
           # - "instance-finder"
           # - "kubectl"
           #- "optimizer-engine"
-          - "optimizer-helper"
+          # - "optimizer-helper"
     permissions:
       contents: read
       packages: write
