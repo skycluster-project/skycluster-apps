@@ -80,8 +80,8 @@ metadata:
     skycluster.io/secret-type: headscale-connection
 type: Opaque
 data:
-  user.json: $(echo "$USER_OUT" | base64 -w0)
-  preauth.json: $(echo "$PREAUTH_OUT" | base64 -w0)
+  user.json: $(cat "$USER_OUT" | base64 -w0)
+  preauth.json: $(cat "$PREAUTH_OUT" | base64 -w0)
 stringData:
   api_server: "$API_SERVER"
   auth_key: "$(jq -r '.key' "$PREAUTH_OUT")"

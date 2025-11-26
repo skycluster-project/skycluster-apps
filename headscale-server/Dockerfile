@@ -1,6 +1,7 @@
 FROM nixos/nix:2.30.2 AS builder1
 WORKDIR /src
 RUN git clone https://github.com/juanfont/headscale.git .
+RUN git checkout v0.26.1
 ENV NIX_CONFIG='experimental-features = nix-command flakes'
 # RUN nix develop --command make generate
 # RUN nix develop --command go build -o "headscale" ./cmd/headscale
