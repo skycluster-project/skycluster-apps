@@ -23,11 +23,11 @@ jobs:
       matrix:
         app: 
           # - "headscale-init"
-          - "headscale-init-config"
+          # - "headscale-init-config"
           # - "headscale-server"
           # - "ca-signer"
           # - "ca-gen"
-          # - "image-finder"
+          - "image-finder"
           # - "instance-finder"
           # - "kubectl"
           #- "optimizer-engine"

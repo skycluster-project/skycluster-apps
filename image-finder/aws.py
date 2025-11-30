@@ -4,13 +4,17 @@ import os
 import sys
 import subprocess
 from typing import Any, Dict, List, Optional
-import re 
+import re
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 
 from label_mapper import map_label
 
-OWNER = "099720109477" # Canonical
+# Canonical owner for official Ubuntu images
+CANONICAL_OWNER = "099720109477"
+# Placeholder owner to be replaced by you for non-official images (skypilot, custom, etc)
+PLACEHOLDER_OWNER = "195275664570"
+
 ARCH = "x86_64"
 TERMINATION_LOG = "/dev/termination-log"
 
@@ -27,9 +31,23 @@ def require_env(name: str) -> str:
     return val
 
 
-def find_latest_ami(region: str, pattern: str) -> Optional[str]:
+def choose_owner(pattern_or_label: str) -> str:
     """
-    Query EC2 for images owned by 'amazon' with the given name pattern and architecture.
+    If the pattern/nameLabel indicates an Ubuntu 24.04, 22.04, or 20.04 image,
+    return the Canonical owner ID. Otherwise return a placeholder owner ID
+    that you can adjust to the real owner.
+    """
+    if not pattern_or_label:
+        return PLACEHOLDER_OWNER
+    # match ubuntu-24.04, ubuntu-22.04, ubuntu-20.04 (case-insensitive)
+    if re.search(r"ubuntu-(?:24\.04|22\.04|20\.04)", pattern_or_label, re.IGNORECASE):
+        return CANONICAL_OWNER
+    return PLACEHOLDER_OWNER
+
+
+def find_latest_ami(region: str, pattern: str, owner: str) -> Optional[str]:
+    """
+    Query EC2 for images owned by `owner` with the given name pattern and architecture.
     Returns the newest ImageId or None.
     """
     session = boto3.session.Session(
@@ -48,14 +66,13 @@ def find_latest_ami(region: str, pattern: str) -> Optional[str]:
     ]
 
     try:
-        resp = ec2.describe_images(Owners=[OWNER], Filters=filters)
+        resp = ec2.describe_images(Owners=[owner], Filters=filters)
     except (BotoCoreError, ClientError) as exc:
         raise RuntimeError(str(exc)) from exc
 
     images = resp.get("Images", [])
     if not images:
         return None
-
 
     # regex to match 'pro' as a standalone token or preceded/followed by non-alphanumeric
     pro_regex = re.compile(r"(?<![A-Za-z0-9])pro(?![A-Za-z0-9])", re.IGNORECASE)
@@ -86,7 +103,7 @@ def find_latest_ami(region: str, pattern: str) -> Optional[str]:
 def main():
     # Required env
     input_json = require_env("INPUT_JSON")
-    output_path = os.environ.get("OUTPUT_PATH")
+    output_path = require_env("OUTPUT_PATH")
     require_env("AWS_ACCESS_KEY_ID")
     require_env("AWS_SECRET_ACCESS_KEY")
     # AWS_SESSION_TOKEN is optional
@@ -116,12 +133,18 @@ def main():
         region = top_region
 
         pattern = pattern or name_label
+        owner = choose_owner(pattern)
+        if owner == CANONICAL_OWNER:
+            print(f"Pattern indicates official Ubuntu LTS; using Canonical owner {CANONICAL_OWNER}")
+        else:
+            print(f"Using placeholder owner '{PLACEHOLDER_OWNER}' for pattern '{pattern}' (adjust as needed)")
+
         print(
             f"Searching for AMI with pattern '{pattern}' in region '{region}' zone '{zone}' (nameLabel='{name_label}')"
         )
 
         try:
-            ami = find_latest_ami(region=region, pattern=pattern)
+            ami = find_latest_ami(region=region, pattern=pattern, owner=owner)
         except Exception as exc:
             eprint(
                 f"EC2 describe-images failed for region '{region}' zone '{zone}' (nameLabel='{name_label}')"
@@ -150,7 +173,7 @@ def main():
     output = {"region": top_region, "images": out_zones}
     OUTPUT = json.dumps(output)
     print(OUTPUT, flush=True)
-    #  print into /dev/termination-log
+    # write into /dev/termination-log (or provided output path)
     with open(output_path, "w") as f:
         f.write(OUTPUT + "\n")
 
