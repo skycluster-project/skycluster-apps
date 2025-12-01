@@ -108,9 +108,7 @@ for z in ZONES:
 
   # If this is a GPU-specific label and the user supplied IMAGE_ID (or IMAGE_NAME),
   if is_gpu:
-    default_image_name = f"skypilot-gcp-gpu-ubuntu-241030"
-    uri = f"projects/sky-dev-465/global/images/{default_image_name}"
-    info(f"{name_label}: no IMAGE_ID/IMAGE_NAME provided; attempting {uri}")
+    uri = "projects/ubuntu-os-accelerator-images/global/images/ubuntu-accelerator-2404-amd64-with-nvidia-580-v20251121"
     out_zone = {"nameLabel": name_label, "zone": zone, "name": uri}
     OUT.append(out_zone)
     continue
