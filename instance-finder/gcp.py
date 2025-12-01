@@ -110,15 +110,31 @@ def filter_by_family(machine_type_name: str, families: List[str]) -> bool:
 
 # ---- GPU heuristics for A2 ----
 
-_A2_GPU_SUFFIX_RE = re.compile(r"-(\d+)g($|-)")  # e.g., a2-highgpu-4g, a2-ultragpu-1g
 
-def extract_gpu_info(machine_type_name: str) -> Dict:
+def extract_gpu_info(machine_desc: Dict) -> Dict:
     """
-    Best-effort:
-    - For A2 family (GPU-optimized machine types), infer GPU count from *-<Ng> suffix.
-    - Manufacturer: NVIDIA (A2 family = A100/A100 80GB variants), model unknown from API alone.
+    Extract GPU info from a GCP machine type description dict.
+    
+    Logic:
+    1. If 'accelerators' field exists, use it to get GPU model and count.
+    2. Otherwise, if machine type is A2 family, try to infer GPU count from suffix.
+    3. If neither, assume no GPU.
     """
-    name = machine_type_name.lower()
+    name = machine_desc.get("name", "").lower()
+    
+    # Step 1: Check accelerators field
+    accelerators = machine_desc.get("accelerators", [])
+    if accelerators:
+        acc = accelerators[0]  # GCP machine types typically have one accelerator type
+        return {
+            "enabled": True,
+            "manufacturer": "NVIDIA",
+            "count": acc.get("guestAcceleratorCount", 0),
+            "model": acc.get("guestAcceleratorType", None),
+            "memory": None,  # GPU memory not provided in API
+        }
+    
+    # Step 2: Try to parse A2 machine type suffix
     if name.startswith("a2-"):
         m = _A2_GPU_SUFFIX_RE.search(name)
         count = int(m.group(1)) if m else 0
@@ -127,9 +143,11 @@ def extract_gpu_info(machine_type_name: str) -> Dict:
             "enabled": enabled,
             "manufacturer": "NVIDIA" if enabled else None,
             "count": count if enabled else 0,
-            "model": None,   # Model cannot be reliably derived from just the machine type string.
-            "memory": None,  # GPU memory (GB) not derivable here.
+            "model": None,
+            "memory": None,
         }
+    
+    # Step 3: No GPU info available
     return {
         "enabled": False,
         "manufacturer": None,
@@ -356,7 +374,7 @@ def main():
         for mt in sorted(candidates, key=lambda m: m.name):
             vcpus = mt.guest_cpus or 0
             ram_gb_str = mb_to_gb_str(mt.memory_mb)  # memory_mb is in MB
-            gpu_info = extract_gpu_info(mt.name)
+            gpu_info = extract_gpu_info(mt)
 
             ond_price, spot_price = estimate_machine_price(
                 billing_service, compute_service_name, region, mt.name, vcpus, mt.memory_mb or 0
