@@ -91,9 +91,7 @@ def filter_by_family(machine_type_name: str, families: List[str]) -> bool:
   return any(lower_name.startswith(fam + "-") or lower_name.startswith(fam) for fam in families)
 
 # ---- GPU heuristics for A2 ----
-
 def extract_gpu_info(mt) -> Dict:
-  # Hard-coded mapping for provided examples (map accelerator type -> cleaned model)
   MAPPING = {
     "nvidia-tesla-v100": "v100",
     "nvidia-tesla-p100": "p100",
@@ -115,20 +113,26 @@ def extract_gpu_info(mt) -> Dict:
     "nvidia-tesla-v100": "16GB",
     "nvidia-tesla-p100": "16GB",
     "nvidia-tesla-t4": "16GB",
+    "nvidia-tesla-p4": "8GB",
+    "nvidia-k80": "12GB",
     "nvidia-a100-80gb": "80GB",
     "nvidia-a100-40gb": "40GB",
     "nvidia-h100-80gb": "80GB",
-    # add others as needed
+    "nvidia-h200-141gb": "141GB",
+    "nvidia-gb200": "80GB",
+    "nvidia-b200": "80GB",
+    "nvidia-l4": "24GB",
+    "nvidia-rtx-a5000": "24GB",
+    "nvidia-rtx-a6000": "48GB",
+    "nvidia-rtx-pro-6000": "24GB",
   }
-
 
   def _clean_model(acc_type_raw: Optional[str]) -> Optional[str]:
     if not acc_type_raw:
       return None
-    s = str(acc_type_raw).split("/")[-1].lower()  # handle full paths
+    s = str(acc_type_raw).split("/")[-1].lower()
     if s in MAPPING:
       return MAPPING[s]
-    # generic normalization: remove vendor prefixes and common suffixes
     s = re.sub(r'^(nvidia(?:-tesla)?)-', '', s)
     s = re.sub(r'-vws$', '', s)
     s = re.sub(r'-mega-\d+gb$', '', s)
@@ -137,15 +141,38 @@ def extract_gpu_info(mt) -> Dict:
     return s or None
 
   name = getattr(mt, "name", "") or ""
-  accelerators = getattr(mt, "accelerators", []) or []
 
-  # Step 1: Check accelerators field
+  # Support multiple possible field names for legacy/new client libs
+  accelerators = (
+    getattr(mt, "accelerators", None)
+    or getattr(mt, "guest_accelerators", None)
+    or getattr(mt, "guestAccelerators", None)
+    or []
+  ) or []
+
+  # Step 1: Check accelerators field (covers n1 GPU machine types)
   if accelerators:
     acc = accelerators[0]
-    acc_type = getattr(acc, "guest_accelerator_type", None)
-    count = int(getattr(acc, "guest_accelerator_count", 0) or 0)
-    model = _clean_model(acc_type).capitalize()
+    # accelerator objects/ dicts may expose different attribute names
+    acc_type_raw = (
+      getattr(acc, "guest_accelerator_type", None)
+      or getattr(acc, "accelerator_type", None)
+      or getattr(acc, "type", None)
+      or (acc.get("guestAcceleratorType") if isinstance(acc, dict) else None)
+      or (acc.get("type") if isinstance(acc, dict) else None)
+    )
+    count = int(
+      getattr(acc, "guest_accelerator_count", None)
+      or getattr(acc, "accelerator_count", None)
+      or getattr(acc, "count", None)
+      or (acc.get("guestAcceleratorCount") if isinstance(acc, dict) else 0)
+      or 0
+    )
+    s_raw = str(acc_type_raw).split("/")[-1].lower() if acc_type_raw else None
+    model_clean = MAPPING.get(s_raw) or _clean_model(s_raw)
+    model = model_clean.capitalize() if model_clean else None
     memory = MEMORY_MAP.get(s_raw) or MEMORY_MAP.get(model_clean)
+
     return {
       "enabled": count > 0,
       "manufacturer": "NVIDIA" if count > 0 else None,
@@ -154,32 +181,24 @@ def extract_gpu_info(mt) -> Dict:
       "memory": memory,
     }
 
-  # Step 2: Check for A2-style machine type names (a2-...-N)
+  # Step 2: A2-style names (a2-...-N)
   _A2_GPU_SUFFIX_RE = re.compile(r"a2-(?:.+)-(\d+)$")
   if name.lower().startswith("a2-"):
     m = _A2_GPU_SUFFIX_RE.search(name.lower())
     count = int(m.group(1)) if m else 0
     enabled = count > 0
-    # A2 machine types use A100 GPUs
-    model = "a100" if enabled else None
-    memory = MEMORY_MAP.get(s_raw) or MEMORY_MAP.get(model_clean)
+    model_clean = "a100" if enabled else None
+    memory = MEMORY_MAP.get("nvidia-a100-80gb") or MEMORY_MAP.get("nvidia-a100-40gb")
     return {
       "enabled": enabled,
       "manufacturer": "NVIDIA" if enabled else None,
       "count": count if enabled else 0,
-      "model": model,
+      "model": model_clean,
       "memory": memory,
     }
 
-  # Step 3: No GPU
-  return {
-    "enabled": False,
-    "manufacturer": None,
-    "count": 0,
-    "model": None,
-    "memory": None,
-  }
-
+  # No GPU
+  return {"enabled": False, "manufacturer": None, "count": 0, "model": None, "memory": None}
 # ---- Pricing via Cloud Billing Catalog API ----
 
 # Family labels we try to match against SKU descriptions.
