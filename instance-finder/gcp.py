@@ -111,30 +111,27 @@ def filter_by_family(machine_type_name: str, families: List[str]) -> bool:
 # ---- GPU heuristics for A2 ----
 
 
-def extract_gpu_info(machine_desc: Dict) -> Dict:
+def extract_gpu_info(mt) -> Dict:
     """
-    Extract GPU info from a GCP machine type description dict.
-    
-    Logic:
-    1. If 'accelerators' field exists, use it to get GPU model and count.
-    2. Otherwise, if machine type is A2 family, try to infer GPU count from suffix.
-    3. If neither, assume no GPU.
+    mt: compute_v1.MachineType object
     """
-    name = machine_desc.get("name", "").lower()
+    name = getattr(mt, "name", "").lower()
     
     # Step 1: Check accelerators field
-    accelerators = machine_desc.get("accelerators", [])
+    accelerators = getattr(mt, "accelerators", [])
     if accelerators:
-        acc = accelerators[0]  # GCP machine types typically have one accelerator type
+        acc = accelerators[0]  # only first accelerator type
         return {
             "enabled": True,
             "manufacturer": "NVIDIA",
-            "count": acc.get("guestAcceleratorCount", 0),
-            "model": acc.get("guestAcceleratorType", None),
-            "memory": None,  # GPU memory not provided in API
+            "count": getattr(acc, "guest_accelerator_count", 0),
+            "model": getattr(acc, "guest_accelerator_type", None),
+            "memory": None,
         }
     
-    # Step 2: Try to parse A2 machine type suffix
+    # Step 2: Check for A2 suffix
+    import re
+    _A2_GPU_SUFFIX_RE = re.compile(r"a2-(?:.+)-(\d+)$")
     if name.startswith("a2-"):
         m = _A2_GPU_SUFFIX_RE.search(name)
         count = int(m.group(1)) if m else 0
@@ -147,7 +144,7 @@ def extract_gpu_info(machine_desc: Dict) -> Dict:
             "memory": None,
         }
     
-    # Step 3: No GPU info available
+    # Step 3: No GPU
     return {
         "enabled": False,
         "manufacturer": None,
